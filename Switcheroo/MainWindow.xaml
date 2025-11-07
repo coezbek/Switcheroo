@@ -18,15 +18,22 @@
                         Executed="ScrollListUp" />
         <CommandBinding Command="local:MainWindow.ScrollListDownCommand"
                         Executed="ScrollListDown" />
+        <CommandBinding Command="local:MainWindow.DismissCommand"
+                        Executed="DismissWindow" />
     </Window.CommandBindings>
 
     <Window.InputBindings>
+        <KeyBinding Command="local:MainWindow.CloseWindowCommand" Key="W" Modifiers="Alt" />
         <KeyBinding Command="local:MainWindow.CloseWindowCommand" Key="W" Modifiers="Ctrl" />
         <KeyBinding Command="local:MainWindow.CloseWindowCommand" Key="X" Modifiers="Alt" />
         <KeyBinding Command="local:MainWindow.ScrollListUpCommand" Key="Up" />
         <KeyBinding Command="local:MainWindow.ScrollListDownCommand" Key="Down" />
         <KeyBinding Command="local:MainWindow.ScrollListUpCommand" Key="K" Modifiers="Alt" />
         <KeyBinding Command="local:MainWindow.ScrollListDownCommand" Key="J" Modifiers="Alt" />
+        <KeyBinding Command="local:MainWindow.ScrollListUpCommand" Key="Up" Modifiers="Alt" />
+        <KeyBinding Command="local:MainWindow.ScrollListDownCommand" Key="Down" Modifiers="Alt" />
+        <KeyBinding Command="local:MainWindow.DismissCommand" Key="Q" Modifiers="Alt" />
+        <KeyBinding Command="local:MainWindow.DismissCommand" Key="Escape" />
     </Window.InputBindings>
 
     <Window.Resources>

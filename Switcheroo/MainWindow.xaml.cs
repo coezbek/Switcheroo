@@ -56,6 +56,7 @@ namespace Switcheroo
         public static readonly RoutedUICommand SwitchToWindowCommand = new RoutedUICommand();
         public static readonly RoutedUICommand ScrollListDownCommand = new RoutedUICommand();
         public static readonly RoutedUICommand ScrollListUpCommand = new RoutedUICommand();
+        public static readonly RoutedUICommand DismissCommand = new RoutedUICommand();
         private OptionsWindow _optionsWindow;
         private AboutWindow _aboutWindow;
         private AltTabHook _altTabHook;
@@ -98,10 +99,10 @@ namespace Switcheroo
                 {
                     Opacity = 0;
                 }
-                else if (args.Key == Key.Escape)
-                {
-                    Opacity = 0;
-                }
+                // else if ((args.Key == Key.Escape) || (args.Key == Key.Q && Keyboard.Modifiers.HasFlag(ModifierKeys.Alt)))
+                // {
+                //     Opacity = 0;
+                // }
                 else if (args.SystemKey == Key.S && Keyboard.Modifiers.HasFlag(ModifierKeys.Alt))
                 {
                     _altTabAutoSwitch = false;
@@ -118,10 +119,10 @@ namespace Switcheroo
                 {
                     Switch();
                 }
-                else if (args.Key == Key.Escape)
-                {
-                    HideWindow();
-                }
+                // else if ((args.Key == Key.Escape) || (args.Key == Key.Q && Keyboard.Modifiers.HasFlag(ModifierKeys.Alt)))
+                // {
+                //    HideWindow();
+                // }
                 else if (args.SystemKey == Key.LeftAlt && !Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                 {
                     Switch();
@@ -606,13 +607,19 @@ namespace Switcheroo
             foreach (var win in windows)
             {
                 bool isClosed = await _windowCloser.TryCloseAsync(win);
-                if(isClosed)
+                if (isClosed)
                     RemoveWindow(win);
             }
 
             if (lb.Items.Count == 0)
                 HideWindow();
 
+            e.Handled = true;
+        }
+        
+        private void DismissWindow(object sender, ExecutedRoutedEventArgs e)
+        {
+            HideWindow();
             e.Handled = true;
         }
 

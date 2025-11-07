@@ -21,15 +21,15 @@ If you use [Chocolatey](https://chocolatey.org), Switcheroo can be installed wit
 Usage
 -----
 
-Action                         | Shortcut        | Remarks
------------------------------- | --------------- | ----------
-Activate Switcheroo            | `Alt + Space`   | This shortcut can be customized in _Options_
-Activate Switcheroo            | `Alt + Tab`     | Only works if enabled under _Options_
-_When Switcheroo is open_      |                 |
-Switch to selected window      | `Enter`         |
-Close selected window          | `Ctrl + W`      |
-Dismiss Switcheroo             | `Esc`           |
-
+Action                         | Shortcut          | Remarks
+------------------------------ | ----------------- | ----------
+Activate Switcheroo            | `Alt + Space`     | This shortcut can be customized in _Options_
+Activate Switcheroo            | `Alt + Tab`       | Only works if enabled under _Options_
+_When Switcheroo is open_      |                   |
+Switch to selected window      | `Enter`           |
+Close selected window          | `Alt or Ctrl + W` |
+Dismiss Switcheroo             | `Esc or Alt + Q`  |
+Up and down in list            | `Up` / `Down`     | Also works with `Alt + J` / `Alt + K` and when holding `Alt`
 
 
 History
@@ -38,6 +38,8 @@ History
 Switcheroo was originally developed by [James Sulak](https://github.com/jsulak).
 
 [Regin Larsen](https://github.com/kvakulo) took over the project in 2014 and is the current maintainer.
+
+This fork is maintained by [Christopher Özbek](https://github.com/coezbek).
 
 
 How to contribute
