@@ -27,6 +27,7 @@ using System.Runtime.Caching;
 using System.Runtime.InteropServices;
 using System.Text;
 using ManagedWinapi.Windows;
+using System.Diagnostics;
 
 namespace Switcheroo.Core
 {
@@ -43,18 +44,9 @@ namespace Switcheroo.Core
                 var processTitle = MemoryCache.Default.Get(key) as string;
                 if (processTitle == null)
                 {
-                    if (IsApplicationFrameWindow())
+                    if (IsUwpApp())
                     {
-                        processTitle = "UWP";
-
-                        var underlyingProcess = AllChildWindows.Where(w => w.Process.Id != Process.Id)
-                            .Select(w => w.Process)
-                            .FirstOrDefault();
-
-                        if (underlyingProcess != null && underlyingProcess.ProcessName != "")
-                        {
-                            processTitle = underlyingProcess.ProcessName;
-                        }
+                        processTitle = GetUwpProcessTitle();
                     }
                     else
                     {
@@ -63,6 +55,21 @@ namespace Switcheroo.Core
                     MemoryCache.Default.Add(key, processTitle, DateTimeOffset.Now.AddHours(1));
                 }
                 return processTitle;
+            }
+        }
+
+        public Process UwpUnderlyingProcess
+        {
+            get
+            {
+                if (!IsUwpApp())
+                {
+                    return null;
+                }
+
+                return AllChildWindows
+                    .Select(w => w.Process)
+                    .FirstOrDefault(p => p.Id != Process.Id);
             }
         }
 
@@ -78,7 +85,17 @@ namespace Switcheroo.Core
 
         public string ExecutablePath
         {
-            get { return GetExecutablePath(Process.Id); }
+            get
+            {
+                var key = "ExecutablePath-" + HWnd;
+                var executablePath = MemoryCache.Default.Get(key) as string;
+                if (executablePath == null)
+                {
+                    executablePath = GetExecutablePath(Process.Id);
+                    MemoryCache.Default.Add(key, executablePath, DateTimeOffset.Now.AddHours(1));
+                }
+                return executablePath;
+            }
         }
 
         public AppWindow(IntPtr HWnd) : base(HWnd)
@@ -98,16 +115,6 @@ namespace Switcheroo.Core
         {
             var lastActiveVisiblePopup = GetLastActiveVisiblePopup();
             WinApi.SwitchToThisWindow(lastActiveVisiblePopup, true);
-        }
-
-        public AppWindow Owner
-        {
-            get
-            {
-                var ownerHandle = WinApi.GetWindow(HWnd, WinApi.GetWindowCmd.GW_OWNER);
-                if (ownerHandle == IntPtr.Zero) return null;
-                return new AppWindow(ownerHandle);
-            }
         }
 
         public new static IEnumerable<AppWindow> AllToplevelWindows
@@ -130,7 +137,7 @@ namespace Switcheroo.Core
             if (HasITaskListDeletedProperty()) return false;
             if (IsCoreWindow()) return false;
             if (IsApplicationFrameWindow() && !HasAppropriateApplicationViewCloakType()) return false;
-
+            
             return true;
         }
 
@@ -179,7 +186,8 @@ namespace Switcheroo.Core
 
         private bool IsOwnerOrOwnerNotVisible()
         {
-            return Owner == null || !Owner.Visible;
+            var owner = WinApi.GetWindow(HWnd, WinApi.GetWindowCmd.GW_OWNER);
+            return owner == IntPtr.Zero || !WinApi.IsWindowVisible(owner);
         }
 
         private bool HasITaskListDeletedProperty()
@@ -189,8 +197,12 @@ namespace Switcheroo.Core
 
         private bool IsCoreWindow()
         {
-            // Avoids double entries for Windows Store Apps on Windows 10
             return ClassName == "Windows.UI.Core.CoreWindow";
+        }
+
+        public bool IsUwpApp()
+        {
+            return IsApplicationFrameWindow();
         }
 
         private bool IsApplicationFrameWindow()
@@ -248,6 +260,20 @@ namespace Switcheroo.Core
                 WinApi.CloseHandle(hprocess);
             }
             throw new Win32Exception(Marshal.GetLastWin32Error());
+        }
+
+        private string GetUwpProcessTitle()
+        {
+            var underlyingProcess = AllChildWindows.Where(w => w.Process.Id != Process.Id)
+                                                   .Select(w => w.Process)
+                                                   .FirstOrDefault();
+
+            if (underlyingProcess != null && !string.IsNullOrEmpty(underlyingProcess.ProcessName))
+            {
+                return underlyingProcess.ProcessName;
+            }
+
+            return "UWP";
         }
     }
 }

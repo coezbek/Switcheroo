@@ -3,7 +3,7 @@
  * http://www.switcheroo.io/
  * Copyright 2009, 2010 James Sulak
  * Copyright 2014 Regin Larsen
- * 
+ *
  * Switcheroo is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -13,7 +13,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with Switcheroo.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -184,7 +184,7 @@ namespace Switcheroo.Core
         }
 
 
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
         public static extern bool QueryFullProcessImageName(IntPtr hprocess, int dwFlags, StringBuilder lpExeName,
             out int size);
 
@@ -311,5 +311,50 @@ namespace Switcheroo.Core
         [DllImport("user32.dll")]
         public static extern int EnumPropsEx(IntPtr hWnd, EnumPropsExDelegate lpEnumFunc, IntPtr lParam);
         public delegate int EnumPropsExDelegate(IntPtr hwnd, IntPtr lpszString, long hData, long dwData);
+
+        // UWP App APIs
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        public static extern int GetPackageFamilyName(IntPtr hProcess, ref uint packageFamilyNameLength, StringBuilder packageFamilyName);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        public static extern int GetPackageFullName(IntPtr hProcess, ref uint packageFullNameLength, StringBuilder packageFullName);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+        public static extern int OpenPackageInfoByFullName(string packageFullName, uint reserved, out IntPtr packageInfoReference);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+        public static extern int GetPackageInfo(IntPtr packageInfoReference, uint flags, ref uint bufferLength, IntPtr buffer, out uint count);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+        public static extern int ClosePackageInfo(IntPtr packageInfoReference);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern bool DestroyIcon(IntPtr hIcon);
+        
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        public struct PACKAGE_INFO
+        {
+            public uint reserved;
+            public uint flags;
+            public IntPtr path;
+            public IntPtr packageFullName;
+            public IntPtr packageFamilyName;
+            public PACKAGE_ID packageId;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        public struct PACKAGE_ID
+        {
+            public uint reserved;
+            public uint processorArchitecture;
+            public ushort Revision;
+            public ushort Build;
+            public ushort Minor;
+            public ushort Major;
+            public IntPtr name;
+            public IntPtr publisher;
+            public IntPtr resourceId;
+            public IntPtr publisherId;
+        }
     }
 }
