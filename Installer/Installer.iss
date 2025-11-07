@@ -53,7 +53,7 @@ const
 
 dotnetRedistURL = 'http://www.microsoft.com/en-us/download/details.aspx?id=30653';
 dotnetRegKey = 'SOFTWARE\Microsoft\Net Framework Setup\NDP\v4.0';
-version = '4.5';
+version = '4.8';
 
 function InitializeSetup(): Boolean;
 var
