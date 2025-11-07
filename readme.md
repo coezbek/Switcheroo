@@ -49,6 +49,14 @@ If you have an idea how to improve Switcheroo, then don't be shy to submit it as
 
 Pull requests are greatly appreciated. If you plan a larger feature, then please get in contact, so we can coordinate the efforts.
 
+How to build
+------------
+
+```
+nuget.exe restore Switcheroo.sln
+msbuild.exe Switcheroo.sln /p:Configuration=Release
+```
+
 
 License
 -------
