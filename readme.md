@@ -47,7 +47,7 @@ TODO / Future Enhancements
 - [x] Ensure the 10 most recent windows remain in the center column, even if duplicated in other columns.
 - [ ] Implement a fixed, identical width for all columns and ensure the process name is right-aligned.
 - [ ] Center the entire window so the middle column is perfectly centered on the screen.
-- [ ] For the three left columns, automatically remove common suffixes (e.g., " - Google Chrome") if they appear in more than half of all open windows.
+- [x] Automatically remove common suffixes (e.g., " - Google Chrome") if they appear in more than half of all open windows of the same process.
 - [x] Fix navigation with `Alt + Left`/`Right` arrow keys.
 - [x] Resolve focus and selection issues when using the mouse to select an item.
 - [ ] After pressing Alt+W the focus must be moved to the next item in the list.

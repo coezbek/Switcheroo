@@ -359,11 +359,8 @@ namespace Switcheroo
 
             _windowCloser = new WindowCloser();
 
-            foreach (var window in _unfilteredWindowList)
-            {
-                window.FormattedTitle = new XamlHighlighter().Highlight(new[] { new StringPart(window.AppWindow.Title) });
-                window.FormattedProcessTitle = new XamlHighlighter().Highlight(new[] { new StringPart(window.AppWindow.ProcessTitle) });
-            }
+            // Set initial formatted titles for all windows
+            TitleFormatter.FormatTitlesForDisplay(_unfilteredWindowList);
 
             SetActiveColumn(3, focus);
 

@@ -97,6 +97,7 @@
     <Compile Include="AppWindowViewModel.cs" />
     <Compile Include="IconToBitmapConverter.cs" />
     <Compile Include="BoolToWhateverConverter.cs" />
+    <Compile Include="TitleFormatter.cs" />
     <Compile Include="WindowCloser.cs" />
     <Compile Include="WindowHandleToCachedIconConverter.cs" />
     <Compile Include="WindowHandleToIconConverter.cs" />
