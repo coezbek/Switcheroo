@@ -42,11 +42,13 @@ Switcheroo displays windows in five columns:
 - The three columns to the left show windows from the three most common applications.
 - The rightmost column shows pinned windows (defined in _Options_).
 
-TODO / Future Enhancements
+TODO
 --------------------------
 - [x] Ensure the 10 most recent windows remain in the center column, even if duplicated in other columns.
 - [ ] Implement a fixed, identical width for all columns.
 - [ ] Center the entire window so the middle column is perfectly centered on the screen.
+- [ ] When less than 5 columns are necessary, the central column must still remain on the same exact spot.
+- [ ] Use mouse-wheel to scroll through the current active list.
 - [x] During search results are shown in the center column, while the other columns stay visible.
 - [x] Automatically remove common suffixes (e.g., " - Google Chrome") if they appear in more than half of all open windows of the same process.
 - [x] Fix navigation with `Alt + Left`/`Right` arrow keys.
@@ -64,6 +66,11 @@ Switcheroo was originally developed by [James Sulak](https://github.com/jsulak).
 [Regin Larsen](https://github.com/kvakulo) took over the project in 2014 and is the current maintainer.
 
 This fork is maintained by [Christopher Özbek](https://github.com/coezbek).
+
+## Other projects
+
+- [Alt-Tab Terminator]() - Commercial alt-tab replacement with window previews.
+- https://github.com/hdlx/AltAppSwitcher - If you want Alt+Tab to be like MacOS's app switcher.
 
 
 How to contribute
