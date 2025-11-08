@@ -22,6 +22,7 @@ using System;
 using System.Configuration;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Threading;
 using Switcheroo.Properties;
@@ -32,9 +33,51 @@ namespace Switcheroo
     {
         private const string mutex_id = "DBDE24E4-91F6-11DF-B495-C536DFD72085-switcheroo";
 
+#if CONSOLE_DEBUG
+        // P/Invoke declarations for console handling
+        [DllImport("kernel32.dll")]
+        private static extern bool AttachConsole(uint dwProcessId);
+
+        private const uint ATTACH_PARENT_PROCESS = 0xFFFFFFFF;
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool SetConsoleCtrlHandler(ConsoleCtrlDelegate HandlerRoutine, bool Add);
+
+        private delegate bool ConsoleCtrlDelegate(CtrlTypes CtrlType);
+
+        private enum CtrlTypes
+        {
+            CTRL_C_EVENT = 0,
+            CTRL_BREAK_EVENT = 1,
+            CTRL_CLOSE_EVENT = 2,
+            CTRL_LOGOFF_EVENT = 5,
+            CTRL_SHUTDOWN_EVENT = 6
+        }
+
+        private static CancellationTokenSource _cts;
+#endif
+
         [STAThread]
         private static void Main()
         {
+#if CONSOLE_DEBUG
+            // Attach to the parent console (your WSL terminal)
+            AttachConsole(ATTACH_PARENT_PROCESS);
+            _cts = new CancellationTokenSource();
+            
+            // Set up the low-level handler
+            SetConsoleCtrlHandler(type => {
+                Console.WriteLine("Ctrl+C detected. Shutting down Switcheroo...");
+                if (type == CtrlTypes.CTRL_C_EVENT)
+                {
+                    Console.WriteLine("Ctrl+C detected. Shutting down Switcheroo...");
+                    _cts.Cancel();
+                    // Return true to indicate we've handled the event
+                    return true;
+                }
+                return false;
+            }, true);
+#endif
             RunAsAdministratorIfConfigured();
 
             using (var mutex = new Mutex(false, mutex_id))
@@ -53,16 +96,27 @@ namespace Switcheroo
                     }
 
 #if PORTABLE
-                        MakePortable(Settings.Default);
+                    MakePortable(Settings.Default);
 #endif
 
                     MigrateUserSettings();
 
-                    var app = new App
+                    var app = new App();
+                    var mainWindow = new MainWindow();
+
+#if CONSOLE_DEBUG
+                    // When cancellation is requested, shut down the WPF application
+                    _cts.Token.Register(() =>
                     {
-                        MainWindow = new MainWindow()
-                    };
-                    app.Run();
+                        // We need to dispatch this to the UI thread
+                        app.Dispatcher.Invoke(app.Shutdown);
+                    });
+#endif
+
+                    Console.WriteLine("Switcheroo started...");
+
+                    // This starts the WPF message loop and blocks until the app exits
+                    app.Run(mainWindow);
                 }
                 finally
                 {

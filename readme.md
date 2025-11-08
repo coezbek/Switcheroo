@@ -30,6 +30,29 @@ Switch to selected window      | `Enter`           |
 Close selected window          | `Alt or Ctrl + W` |
 Dismiss Switcheroo             | `Esc or Alt + Q`  |
 Up and down in list            | `Up` / `Down`     | Also works with `Alt + J` / `Alt + K` and when holding `Alt`
+Navigate columns               | `Left` / `Right`  | Also works when holding `Alt`
+Cycle most common apps         | `Alt + ~`         |
+
+Column Mode
+-----------
+
+Switcheroo displays windows in five columns:
+
+- The center column shows the 10 most recently used windows and all windows not shown in other columns.
+- The three columns to the left show windows from the three most common applications.
+- The rightmost column shows pinned windows (defined in _Options_).
+
+TODO / Future Enhancements
+--------------------------
+- [x] Ensure the 10 most recent windows remain in the center column, even if duplicated in other columns.
+- [ ] Implement a fixed, identical width for all columns and ensure the process name is right-aligned.
+- [ ] Center the entire window so the middle column is perfectly centered on the screen.
+- [ ] For the three left columns, automatically remove common suffixes (e.g., " - Google Chrome") if they appear in more than half of all open windows.
+- [x] Fix navigation with `Alt + Left`/`Right` arrow keys.
+- [x] Resolve focus and selection issues when using the mouse to select an item.
+- [ ] After pressing Alt+W the focus must be moved to the next item in the list.
+- [ ] Make it user configurable if single or double click is needed to switch to a window.
+- [ ] Make pinned windows configurable from the UI / Settings.
 
 
 History

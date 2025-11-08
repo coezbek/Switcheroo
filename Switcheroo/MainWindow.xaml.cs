@@ -28,9 +28,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Forms;
-using System.Windows.Input;
-using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using ManagedWinapi;
@@ -38,9 +36,12 @@ using ManagedWinapi.Windows;
 using Switcheroo.Core;
 using Switcheroo.Core.Matchers;
 using Switcheroo.Properties;
+using System.Windows.Input;
+using System.Windows.Interop;
 using Application = System.Windows.Application;
 using MenuItem = System.Windows.Forms.MenuItem;
 using MessageBox = System.Windows.MessageBox;
+using NotifyIcon = System.Windows.Forms.NotifyIcon;
 
 namespace Switcheroo
 {
@@ -48,7 +49,6 @@ namespace Switcheroo
     {
         private WindowCloser _windowCloser;
         private List<AppWindowViewModel> _unfilteredWindowList;
-        private ObservableCollection<AppWindowViewModel> _filteredWindowList;
         private NotifyIcon _notifyIcon;
         private HotKey _hotkey;
 
@@ -63,9 +63,34 @@ namespace Switcheroo
         private SystemWindow _foregroundWindow;
         private bool _altTabAutoSwitch;
 
+        // New collections for each column
+        private ObservableCollection<AppWindowViewModel> _listLeft1;
+        private ObservableCollection<AppWindowViewModel> _listLeft2;
+        private ObservableCollection<AppWindowViewModel> _listLeft3;
+        private ObservableCollection<AppWindowViewModel> _listCenter;
+        private ObservableCollection<AppWindowViewModel> _listRight;
+
+        // For navigation
+        private readonly List<System.Windows.Controls.ListBox> _listBoxes;
+        private int _activeColumnIndex = 3; // Center is the default
+
         public MainWindow()
         {
             InitializeComponent();
+            
+            _listLeft1 = new ObservableCollection<AppWindowViewModel>();
+            _listLeft2 = new ObservableCollection<AppWindowViewModel>();
+            _listLeft3 = new ObservableCollection<AppWindowViewModel>();
+            _listCenter = new ObservableCollection<AppWindowViewModel>();
+            _listRight = new ObservableCollection<AppWindowViewModel>();
+            
+            _listBoxes = new List<System.Windows.Controls.ListBox> { ListBoxLeft1, ListBoxLeft2, ListBoxLeft3, ListBoxCenter, ListBoxRight };
+
+            ListBoxLeft1.ItemsSource = _listLeft1;
+            ListBoxLeft2.ItemsSource = _listLeft2;
+            ListBoxLeft3.ItemsSource = _listLeft3;
+            ListBoxCenter.ItemsSource = _listCenter;
+            ListBoxRight.ItemsSource = _listRight;
 
             SetUpKeyBindings();
 
@@ -94,15 +119,17 @@ namespace Switcheroo
 
             KeyDown += (sender, args) =>
             {
+                var key = (args.Key == Key.System) ? args.SystemKey : args.Key;
+
                 // Opacity is set to 0 right away so it appears that action has been taken right away...
-                if (args.Key == Key.Enter && !Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+                if (key == Key.Enter && !Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                 {
                     Opacity = 0;
                 }
-                // else if ((args.Key == Key.Escape) || (args.Key == Key.Q && Keyboard.Modifiers.HasFlag(ModifierKeys.Alt)))
-                // {
-                //     Opacity = 0;
-                // }
+                else if ((args.Key == Key.Escape) || (args.Key == Key.Q && Keyboard.Modifiers.HasFlag(ModifierKeys.Alt)))
+                {
+                    Opacity = 0;
+                }
                 else if (args.SystemKey == Key.S && Keyboard.Modifiers.HasFlag(ModifierKeys.Alt))
                 {
                     _altTabAutoSwitch = false;
@@ -114,15 +141,17 @@ namespace Switcheroo
 
             KeyUp += (sender, args) =>
             {
+                var key = (args.Key == Key.System) ? args.SystemKey : args.Key;
+
                 // ... But only when the keys are release, the action is actually executed
-                if (args.Key == Key.Enter && !Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+                if (key == Key.Enter && !Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                 {
                     Switch();
                 }
-                // else if ((args.Key == Key.Escape) || (args.Key == Key.Q && Keyboard.Modifiers.HasFlag(ModifierKeys.Alt)))
-                // {
-                //    HideWindow();
-                // }
+                else if ((args.Key == Key.Escape) || (args.Key == Key.Q && Keyboard.Modifiers.HasFlag(ModifierKeys.Alt)))
+                {
+                    HideWindow();
+                }
                 else if (args.SystemKey == Key.LeftAlt && !Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                 {
                     Switch();
@@ -259,39 +288,90 @@ namespace Switcheroo
             return null;
         }
 
-        /// <summary>
-        /// Populates the window list with the current running windows.
-        /// </summary>
         private void LoadData(InitialFocus focus)
         {
             _unfilteredWindowList = new WindowFinder().GetWindows().Select(window => new AppWindowViewModel(window)).ToList();
-
             var firstWindow = _unfilteredWindowList.FirstOrDefault();
+            bool foregroundWindowMovedToBottom = false;
 
-            var foregroundWindowMovedToBottom = false;
-            
-            // Move first window to the bottom of the list if it's related to the foreground window
             if (firstWindow != null && AreWindowsRelated(firstWindow.AppWindow, _foregroundWindow))
             {
                 _unfilteredWindowList.RemoveAt(0);
                 _unfilteredWindowList.Add(firstWindow);
                 foregroundWindowMovedToBottom = true;
             }
+            
+            _listLeft1.Clear();
+            _listLeft2.Clear();
+            _listLeft3.Clear();
+            _listCenter.Clear();
+            _listRight.Clear();
 
-            _filteredWindowList = new ObservableCollection<AppWindowViewModel>(_unfilteredWindowList);
+            var handledHwnds = new HashSet<IntPtr>();
+            
+            var pinnedProcesses = new HashSet<string> { "thunderbird", "outlook"};
+            var rightWindows = _unfilteredWindowList
+                .Where(w => pinnedProcesses.Contains(w.ProcessTitle.ToLowerInvariant()))
+                .ToList();
+            foreach (var window in rightWindows)
+            {
+                _listRight.Add(window);
+                handledHwnds.Add(window.HWnd);
+            }
+            
+            var remainingForTopApps = _unfilteredWindowList.Where(w => !handledHwnds.Contains(w.HWnd)).ToList();
+            var topApps = remainingForTopApps
+                .GroupBy(w => w.ProcessTitle)
+                .OrderByDescending(g => g.Count())
+                .ThenBy(g => g.Key)
+                .Take(3)
+                .ToList();
+
+            var min_number_of_windows_for_own_column = 0;
+
+            if (topApps.Count > 2 && topApps[2].ToList().Count >= min_number_of_windows_for_own_column)
+            {
+                foreach (var window in topApps[2]) { _listLeft1.Add(window); handledHwnds.Add(window.HWnd); }
+            }
+            if (topApps.Count > 1 && topApps[1].ToList().Count >= min_number_of_windows_for_own_column)
+            {
+                foreach (var window in topApps[1]) { _listLeft2.Add(window); handledHwnds.Add(window.HWnd); }
+            }
+            if (topApps.Count > 0 && topApps[0].ToList().Count >= min_number_of_windows_for_own_column)
+            {
+                foreach (var window in topApps[0]) { _listLeft3.Add(window); handledHwnds.Add(window.HWnd); }
+            }
+
+            var first10Windows = _unfilteredWindowList.Take(10);
+            var first10Set= new HashSet<IntPtr>();    
+            foreach (var window in first10Windows)
+            {
+                first10Set.Add(window.HWnd);
+            }
+
+            // We always keep the first 10 windows in the center column (no matter if they are already in left/right)
+            var remainingForCenter = _unfilteredWindowList.Where(w => first10Set.Contains(w.HWnd) || !handledHwnds.Contains(w.HWnd));
+            var centerWindows = remainingForCenter.ToList();
+            foreach (var window in centerWindows)
+            {
+                _listCenter.Add(window);
+            }
+
             _windowCloser = new WindowCloser();
 
             foreach (var window in _unfilteredWindowList)
             {
-                window.FormattedTitle = new XamlHighlighter().Highlight(new[] {new StringPart(window.AppWindow.Title)});
-                window.FormattedProcessTitle =
-                    new XamlHighlighter().Highlight(new[] {new StringPart(window.AppWindow.ProcessTitle)});
+                window.FormattedTitle = new XamlHighlighter().Highlight(new[] { new StringPart(window.AppWindow.Title) });
+                window.FormattedProcessTitle = new XamlHighlighter().Highlight(new[] { new StringPart(window.AppWindow.ProcessTitle) });
             }
 
-            lb.DataContext = null;
-            lb.DataContext = _filteredWindowList;
+            SetActiveColumn(3, focus);
 
-            FocusItemInList(focus, foregroundWindowMovedToBottom);
+            // Correct the selection for the initial Shift+Alt+Tab after the active window has been moved to the end
+            if (foregroundWindowMovedToBottom && focus == InitialFocus.PreviousItem)
+            {
+                PreviousItem();
+            }
 
             tb.Clear();
             tb.Focus();
@@ -303,22 +383,37 @@ namespace Switcheroo
         {
             return window1.HWnd == window2.HWnd || window1.Process.Id == window2.Process.Id;
         }
-
-        private void FocusItemInList(InitialFocus focus, bool foregroundWindowMovedToBottom)
+        
+        private void SetActiveColumn(int index, InitialFocus focus = InitialFocus.NextItem)
         {
-            if (focus == InitialFocus.PreviousItem)
-            {
-                var previousItemIndex = lb.Items.Count - 1;
-                if (foregroundWindowMovedToBottom)
-                {
-                    previousItemIndex--;
-                }
+            if (index < 0 || index >= _listBoxes.Count) return;
 
-                lb.SelectedIndex = previousItemIndex > 0 ? previousItemIndex : 0;
-            }
-            else
+            if (_activeColumnIndex >= 0 && _activeColumnIndex < _listBoxes.Count)
             {
-                lb.SelectedIndex = 0;
+                _listBoxes[_activeColumnIndex].Background = Brushes.Transparent;
+            }
+
+            _activeColumnIndex = index;
+            var currentListBox = _listBoxes[_activeColumnIndex];
+
+            currentListBox.Background = Brushes.AliceBlue;
+
+            if (currentListBox.Items.Count > 0)
+            {
+                // If no item is selected, select one based on the focus direction.
+                // Otherwise, keep the current selection.
+                if (currentListBox.SelectedIndex == -1)
+                {
+                    if (focus == InitialFocus.PreviousItem)
+                    {
+                        currentListBox.SelectedIndex = currentListBox.Items.Count - 1;
+                    }
+                    else
+                    {
+                        currentListBox.SelectedIndex = 0;
+                    }
+                }
+                ScrollSelectedItemIntoView();
             }
         }
 
@@ -344,10 +439,14 @@ namespace Switcheroo
         /// </summary>
         private void Switch()
         {
-            foreach (var item in lb.SelectedItems)
+            var currentListBox = _listBoxes[_activeColumnIndex];
+            if (currentListBox.SelectedItems.Count > 0)
             {
-                var win = (AppWindowViewModel)item;
-                win.AppWindow.SwitchToLastVisibleActivePopup();
+                foreach (var item in currentListBox.SelectedItems)
+                {
+                    var win = (AppWindowViewModel)item;
+                    win.AppWindow.SwitchToLastVisibleActivePopup();
+                }
             }
 
             HideWindow();
@@ -437,6 +536,68 @@ namespace Switcheroo
             HideWindow();
         }
 
+        private void MainWindow_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            // The actual key pressed, ignoring modifiers. This is important for system keys like Alt+Left.
+            var key = (e.Key == Key.System) ? e.SystemKey : e.Key;
+
+            // Alt+~ to rotate backwards through center and left columns
+            if (Keyboard.Modifiers == ModifierKeys.Alt && key == Key.OemTilde)
+            {
+                e.Handled = true;
+                int nextIndex = _activeColumnIndex - 1;
+                // If we moved left from the far-left column, or if we are on the far-right column,
+                // jump to the center column to start the rotation.
+                if (nextIndex < 0 || _activeColumnIndex == 4)
+                {
+                    nextIndex = 3;
+                }
+                SetActiveColumn(nextIndex);
+                return;
+            }
+
+            // Handle Left/Right arrow navigation. This allows navigation when the textbox isn't focused,
+            // or at any time when the Alt key is held down.
+            if (!tb.IsFocused || Keyboard.Modifiers.HasFlag(ModifierKeys.Alt))
+            {
+                if (key == Key.Left)
+                {
+                    e.Handled = true;
+                    int nextIndex = _activeColumnIndex - 1;
+                    if (nextIndex >= 0)
+                    {
+                        SetActiveColumn(nextIndex);
+                    }
+                    return;
+                }
+
+                if (key == Key.Right)
+                {
+                    e.Handled = true;
+                    int nextIndex = _activeColumnIndex + 1;
+                    if (nextIndex < _listBoxes.Count)
+                    {
+                        SetActiveColumn(nextIndex);
+                    }
+                    return;
+                }
+            }
+        }
+
+        // When a listbox gets focus, make it the active column
+        private void ListBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            var focusedListBox = sender as System.Windows.Controls.ListBox;
+            if (focusedListBox != null)
+            {
+                int newIndex = _listBoxes.IndexOf(focusedListBox);
+                if (newIndex != -1 && newIndex != _activeColumnIndex)
+                {
+                    SetActiveColumn(newIndex, InitialFocus.NextItem);
+                }
+            }
+        }
+
         private void hotkey_HotkeyPressed(object sender, EventArgs e)
         {
             if (!Settings.Default.EnableHotKey)
@@ -486,14 +647,7 @@ namespace Switcheroo
                 ActivateAndFocusMainWindow();
 
                 Keyboard.Focus(tb);
-                if (e.ShiftDown)
-                {
-                    LoadData(InitialFocus.PreviousItem);
-                }
-                else
-                {
-                    LoadData(InitialFocus.NextItem);
-                }
+                LoadData(e.ShiftDown ? InitialFocus.PreviousItem : InitialFocus.NextItem);
 
                 if (Settings.Default.AutoSwitch && !e.CtrlDown)
                 {
@@ -501,7 +655,6 @@ namespace Switcheroo
                     tb.IsEnabled = false;
                     tb.Text = "Press Alt + S to search";
                 }
-
                 Opacity = 1;
             }
             else
@@ -527,8 +680,7 @@ namespace Switcheroo
 
             var thisWindowHandle = new WindowInteropHelper(this).Handle;
             var thisWindow = new AppWindow(thisWindowHandle);
-
-            var altKey = new KeyboardKey(Keys.Alt);
+            var altKey = new KeyboardKey(System.Windows.Forms.Keys.Alt);
             var altKeyPressed = false;
 
             // Press the Alt key if it is not already being pressed
@@ -552,10 +704,20 @@ namespace Switcheroo
 
         private void TextChanged(object sender, TextChangedEventArgs args)
         {
-            if (!tb.IsEnabled)
+            if (!tb.IsEnabled) return;
+            
+            if (string.IsNullOrEmpty(tb.Text))
             {
+                LoadData(InitialFocus.NextItem);
                 return;
             }
+            
+            _listLeft1.Clear();
+            _listLeft2.Clear();
+            _listLeft3.Clear();
+            _listRight.Clear();
+            _listCenter.Clear();
+            SetActiveColumn(3);
 
             var query = tb.Text;
 
@@ -569,17 +731,14 @@ namespace Switcheroo
 
             foreach (var filterResult in filterResults)
             {
-                filterResult.AppWindow.FormattedTitle =
-                    GetFormattedTitleFromBestResult(filterResult.WindowTitleMatchResults);
-                filterResult.AppWindow.FormattedProcessTitle =
-                    GetFormattedTitleFromBestResult(filterResult.ProcessTitleMatchResults);
+                filterResult.AppWindow.FormattedTitle = GetFormattedTitleFromBestResult(filterResult.WindowTitleMatchResults);
+                filterResult.AppWindow.FormattedProcessTitle = GetFormattedTitleFromBestResult(filterResult.ProcessTitleMatchResults);
+                _listCenter.Add(filterResult.AppWindow);
             }
 
-            _filteredWindowList = new ObservableCollection<AppWindowViewModel>(filterResults.Select(r => r.AppWindow));
-            lb.DataContext = _filteredWindowList;
-            if (lb.Items.Count > 0)
+            if (ListBoxCenter.Items.Count > 0)
             {
-                lb.SelectedItem = lb.Items[0];
+                ListBoxCenter.SelectedItem = ListBoxCenter.Items[0];
             }
         }
 
@@ -603,16 +762,74 @@ namespace Switcheroo
 
         private async void CloseWindow(object sender, ExecutedRoutedEventArgs e)
         {
-            var windows = lb.SelectedItems.Cast<AppWindowViewModel>().ToList();
+            var currentListBox = _listBoxes[_activeColumnIndex];
+            if (currentListBox.SelectedItem == null)
+            {
+                e.Handled = true;
+                return;
+            }
+
+            // Store the index to intelligently re-select after deletion
+            var selectedIndex = currentListBox.SelectedIndex;
+            var originalIndex = _activeColumnIndex;
+
+            var windows = currentListBox.SelectedItems.Cast<AppWindowViewModel>().ToList();
             foreach (var win in windows)
             {
                 bool isClosed = await _windowCloser.TryCloseAsync(win);
                 if (isClosed)
-                    RemoveWindow(win);
+                    RemoveWindowFromAllLists(win);
             }
 
-            if (lb.Items.Count == 0)
+            // If we just closed the very last window, hide the app.
+            if (_unfilteredWindowList.Count == 0)
+            {
                 HideWindow();
+                e.Handled = true;
+                return;
+            }
+
+            // If the column we were in is now empty, find the next logical column by moving towards the center.
+            if (currentListBox.Items.Count == 0)
+            {
+                if (originalIndex < 3) // Column was on the left of center.
+                {
+                    // Search right, towards the center, for the next available column.
+                    for (int i = originalIndex + 1; i < _listBoxes.Count; i++)
+                    {
+                        if (_listBoxes[i].Items.Count > 0)
+                        {
+                            SetActiveColumn(i);
+                            break;
+                        }
+                    }
+                }
+                else // Column was on the right of center (or the center itself).
+                {
+                    // Search left, towards the center, for the next available column.
+                    for (int i = originalIndex - 1; i >= 0; i--)
+                    {
+                        if (_listBoxes[i].Items.Count > 0)
+                        {
+                            SetActiveColumn(i);
+                            break;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // The current column is not empty, so just update the selection within it.
+                if (selectedIndex >= currentListBox.Items.Count)
+                {
+                    currentListBox.SelectedIndex = currentListBox.Items.Count - 1;
+                }
+                else
+                {
+                    currentListBox.SelectedIndex = selectedIndex;
+                }
+                ScrollSelectedItemIntoView();
+            }
 
             e.Handled = true;
         }
@@ -623,24 +840,13 @@ namespace Switcheroo
             e.Handled = true;
         }
 
-        private void RemoveWindow(AppWindowViewModel window)
+        private void RemoveWindowFromAllLists(AppWindowViewModel window)
         {
-            int index = _filteredWindowList.IndexOf(window);
-            if (index < 0)
-                return;
-
-            if (lb.SelectedIndex == index)
-            {
-                if (_filteredWindowList.Count > index + 1)
-                    lb.SelectedIndex++;
-                else
-                {
-                    if (index > 0)
-                        lb.SelectedIndex--;
-                }
-            }
-
-            _filteredWindowList.Remove(window);
+            _listLeft1.Remove(window);
+            _listLeft2.Remove(window);
+            _listLeft3.Remove(window);
+            _listCenter.Remove(window);
+            _listRight.Remove(window);
             _unfilteredWindowList.Remove(window);
         }
 
@@ -652,17 +858,17 @@ namespace Switcheroo
 
         private void PreviousItem()
         {
-            if (lb.Items.Count > 0)
+            var currentListBox = _listBoxes[_activeColumnIndex];
+            if (currentListBox.Items.Count > 0)
             {
-                if (lb.SelectedIndex != 0)
+                if (currentListBox.SelectedIndex > 0)
                 {
-                    lb.SelectedIndex--;
+                    currentListBox.SelectedIndex--;
                 }
                 else
                 {
-                    lb.SelectedIndex = lb.Items.Count - 1;
+                    currentListBox.SelectedIndex = currentListBox.Items.Count - 1;
                 }
-
                 ScrollSelectedItemIntoView();
             }
         }
@@ -675,15 +881,16 @@ namespace Switcheroo
 
         private void NextItem()
         {
-            if (lb.Items.Count > 0)
+            var currentListBox = _listBoxes[_activeColumnIndex];
+            if (currentListBox.Items.Count > 0)
             {
-                if (lb.SelectedIndex != lb.Items.Count - 1)
+                if (currentListBox.SelectedIndex < currentListBox.Items.Count - 1)
                 {
-                    lb.SelectedIndex++;
+                    currentListBox.SelectedIndex++;
                 }
                 else
                 {
-                    lb.SelectedIndex = 0;
+                    currentListBox.SelectedIndex = 0;
                 }
 
                 ScrollSelectedItemIntoView();
@@ -692,10 +899,10 @@ namespace Switcheroo
 
         private void ScrollSelectedItemIntoView()
         {
-            var selectedItem = lb.SelectedItem;
-            if (selectedItem != null)
+            var currentListBox = _listBoxes[_activeColumnIndex];
+            if (currentListBox.SelectedItem != null)
             {
-                lb.ScrollIntoView(selectedItem);
+                currentListBox.ScrollIntoView(currentListBox.SelectedItem);
             }
         }
 
