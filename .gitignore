@@ -183,3 +183,4 @@ $RECYCLE.BIN/
 
 Installer/Output
 .vscode/
+*.exe
