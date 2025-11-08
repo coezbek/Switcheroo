@@ -202,11 +202,11 @@
                     <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="{x:Static SystemColors.HighlightColor}" Opacity=".4" />
                 </Grid.Resources>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition x:Name="ColLeft1" Width="*" />
+                    <ColumnDefinition x:Name="ColLeft2" Width="*" />
+                    <ColumnDefinition x:Name="ColLeft3" Width="*" />
+                    <ColumnDefinition x:Name="ColCenter" Width="*" />
+                    <ColumnDefinition x:Name="ColRight" Width="*" />
                 </Grid.ColumnDefinitions>
 
                 <ListBox GotFocus="ListBox_GotFocus" Grid.Column="0" Name="ListBoxLeft1" Style="{StaticResource ColumnListBoxStyle}" ItemTemplate="{StaticResource WindowItemTemplate}" />

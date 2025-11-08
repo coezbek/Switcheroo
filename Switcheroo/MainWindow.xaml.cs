@@ -702,19 +702,21 @@ namespace Switcheroo
         private void TextChanged(object sender, TextChangedEventArgs args)
         {
             if (!tb.IsEnabled) return;
-            
+
             if (string.IsNullOrEmpty(tb.Text))
             {
                 LoadData(InitialFocus.NextItem);
                 return;
             }
-            
-            _listLeft1.Clear();
-            _listLeft2.Clear();
-            _listLeft3.Clear();
-            _listRight.Clear();
+
+            // During search, we only modify the center list.
             _listCenter.Clear();
-            SetActiveColumn(3);
+
+            // If a side column was active, switch to the center for search results.
+            if (_activeColumnIndex != 3)
+            {
+                SetActiveColumn(3);
+            }
 
             var query = tb.Text;
 
