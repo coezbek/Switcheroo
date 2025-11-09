@@ -10,16 +10,12 @@ you to quickly switch to any window by typing in just a few characters of its ti
 <img src="screenshot.png" alt="Screenshot of Switcheroo in action" width="540px" height="372px">
 
 
-Download
---------
+## Download
 
-**[Download Switcheroo here](https://github.com/kvakulo/Switcheroo/releases)**
-
-If you use [Chocolatey](https://chocolatey.org), Switcheroo can be installed with `choco install switcheroo`.
+**[Download Switcheroo here](https://github.com/coezbek/Switcheroo/releases)**
 
 
-Usage
------
+## Usage
 
 Action                         | Shortcut          | Remarks
 ------------------------------ | ----------------- | ----------
@@ -33,8 +29,7 @@ Up and down in list            | `Up` / `Down`     | Also works with `Alt + J` /
 Navigate columns               | `Left` / `Right`  | Also works when holding `Alt`
 Cycle most common apps         | `Alt + ~`         |
 
-Column Mode
------------
+## Column Mode
 
 Switcheroo displays windows in five columns:
 
@@ -42,11 +37,10 @@ Switcheroo displays windows in five columns:
 - The three columns to the left show windows from the three most common applications.
 - The rightmost column shows pinned windows (defined in _Options_).
 
-TODO
---------------------------
+## TODO
 - [x] Ensure the 10 most recent windows remain in the center column, even if duplicated in other columns.
-- [ ] Implement a fixed, identical width for all columns.
-- [ ] Center the entire window so the middle column is perfectly centered on the screen.
+- [x] Implement a fixed, identical width for all columns.
+- [x] Center the entire window so the middle column is perfectly centered on the screen.
 - [ ] When less than 5 columns are necessary, the central column must still remain on the same exact spot.
 - [ ] Use mouse-wheel to scroll through the current active list.
 - [x] During search results are shown in the center column, while the other columns stay visible.
@@ -56,10 +50,10 @@ TODO
 - [x] After pressing Alt+W the focus must be moved to the next item in the list.
 - [ ] Make it user configurable if single or double click is needed to switch to a window.
 - [ ] Make pinned windows configurable from the UI / Settings.
+- [ ] Allow to highlight some of the windows based on regex rules.
 
 
-History
----------
+## History
 
 Switcheroo was originally developed by [James Sulak](https://github.com/jsulak).
 

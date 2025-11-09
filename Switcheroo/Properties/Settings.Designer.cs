@@ -142,5 +142,17 @@ namespace Switcheroo.Properties {
                 this["EnableHotKey"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("-1")]
+        public double UserWidth {
+            get { 
+                return ((double)(this["UserWidth"])); 
+            }
+            set { 
+                this["UserWidth"] = value; 
+            }
+        }
     }
 }

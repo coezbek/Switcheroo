@@ -67,6 +67,7 @@ namespace Switcheroo
             AutoSwitch.IsChecked = Settings.Default.AutoSwitch;
             AutoSwitch.IsEnabled = Settings.Default.AltTabHook;
             RunAsAdministrator.IsChecked = Settings.Default.RunAsAdmin;
+            ColumnWidth.Text = Settings.Default.UserWidth.ToString();
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
@@ -107,6 +108,11 @@ namespace Switcheroo
             Settings.Default.AltTabHook = AltTabCheckBox.IsChecked.GetValueOrDefault();
             Settings.Default.AutoSwitch = AutoSwitch.IsChecked.GetValueOrDefault();
             Settings.Default.RunAsAdmin = RunAsAdministrator.IsChecked.GetValueOrDefault();
+            double columnWidth;
+            if (double.TryParse(ColumnWidth.Text, out columnWidth))
+            {
+                Settings.Default.UserWidth = columnWidth;
+            }
             Settings.Default.Save();
 
             if (closeOptionsWindow)

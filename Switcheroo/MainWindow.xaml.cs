@@ -414,21 +414,42 @@ namespace Switcheroo
             }
         }
 
+        private double ComputeDefaultWidth()
+        {
+            double columnWidth = Settings.Default.UserWidth > 0
+                ? Settings.Default.UserWidth
+                : 250;
+            columnWidth = Math.Max(100, columnWidth);
+
+            double screenWidth = SystemParameters.PrimaryScreenWidth;
+
+            return Math.Min(columnWidth * 5, screenWidth * 0.95);
+        }
+
         /// <summary>
         /// Place the Switcheroo window in the center of the screen
         /// </summary>
         private void CenterWindow()
         {
-            // Reset height every time to ensure that resolution changes take effect
-            Border.MaxHeight = SystemParameters.PrimaryScreenHeight;
+            // Set the correct width
+            Width = ComputeDefaultWidth();
+            Border.MaxHeight = SystemParameters.PrimaryScreenHeight * 0.9;
 
-            // Force a rendering before repositioning the window
-            SizeToContent = SizeToContent.Manual;
-            SizeToContent = SizeToContent.WidthAndHeight;
+            // Force layout update to get correct ActualHeight for vertical centering.
+            UpdateLayout();
 
-            // Position the window in the center of the screen
-            Left = (SystemParameters.PrimaryScreenWidth/2) - (ActualWidth/2);
-            Top = (SystemParameters.PrimaryScreenHeight/2) - (ActualHeight/2);
+            var columnWidth = Settings.Default.UserWidth;
+            var numVisibleLeftColumns = 3;
+            // if (_listLeft1.Any()) 
+            //   numVisibleLeftColumns++;
+
+            // The anchor is the screen's center. We want the left side of our middle column to align with it.
+            var centerColumnCenterOffset = (numVisibleLeftColumns * columnWidth);
+            
+            Left = (SystemParameters.PrimaryScreenWidth / 2.0) - centerColumnCenterOffset;
+
+            // Try to top align the window to 256px top if sufficient space.
+            Top = Math.Min(256, (SystemParameters.PrimaryScreenHeight / 2.0) - (ActualHeight / 2.0));
         }
 
         /// <summary>
