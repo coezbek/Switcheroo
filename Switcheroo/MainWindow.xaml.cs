@@ -191,6 +191,41 @@ namespace Switcheroo
             _altTabHook.Pressed += AltTabPressed;
         }
 
+        private int _wheelRemainder;
+
+        private void MainWindow_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            _wheelRemainder += e.Delta;
+
+            // Alt+Shift => move between lists (columns)
+            var mods = Keyboard.Modifiers;
+            bool altShift = (mods & (ModifierKeys.Alt | ModifierKeys.Shift)) == (ModifierKeys.Alt | ModifierKeys.Shift);
+
+            int WHEEL_DELTA = altShift ? 360 : 180;
+
+            while (Math.Abs(_wheelRemainder) >= WHEEL_DELTA)
+            {
+                var scrollUpLeft = _wheelRemainder > 0;
+                if (altShift)
+                {
+                    int count = _listBoxes.Count;
+                    int next = (_activeColumnIndex + (scrollUpLeft ? -1 : +1) + count) % count;
+                    SetActiveColumn(next);
+                }
+                else
+                {
+                    if (scrollUpLeft) 
+                        PreviousItem();
+                    else
+                        NextItem();
+                }
+
+                _wheelRemainder += (scrollUpLeft ? -WHEEL_DELTA : WHEEL_DELTA);
+            }
+
+            e.Handled = true; // prevent underlying ListBox from also scrolling
+        }
+
         private void SetUpNotifyIcon()
         {
             var icon = Properties.Resources.icon;

@@ -7,7 +7,9 @@
         SizeToContent="Height"
         Title="" MinWidth="750" Deactivated="MainWindow_OnLostFocus" Loaded="MainWindow_OnLoaded"
         BorderBrush="Transparent" BorderThickness="1"
-        Background="Transparent" KeyDown="MainWindow_KeyDown">
+        Background="Transparent" KeyDown="MainWindow_KeyDown"
+        PreviewMouseWheel="MainWindow_PreviewMouseWheel"
+        >
 
     <Window.CommandBindings>
         <CommandBinding Command="local:MainWindow.CloseWindowCommand"

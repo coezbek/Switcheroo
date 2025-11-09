@@ -25,8 +25,8 @@ _When Switcheroo is open_      |                   |
 Switch to selected window      | `Enter`           |
 Close selected window          | `Alt or Ctrl + W` |
 Dismiss Switcheroo             | `Esc or Alt + Q`  |
-Up and down in list            | `Up` / `Down`     | Also works with `Alt + J` / `Alt + K` and when holding `Alt`
-Navigate columns               | `Left` / `Right`  | Also works when holding `Alt`
+Up and down in list            | `Up` / `Down`     | Also works with `Alt + J` / `Alt + K` and when holding `Alt`. Also works with mouse wheel.
+Navigate columns               | `Left` / `Right`  | Also works when holding `Alt`. `Alt+Shift+Wheel` to scroll columns.
 Cycle most common apps         | `Alt + ~`         |
 
 ## Column Mode
@@ -42,7 +42,7 @@ Switcheroo displays windows in five columns:
 - [x] Implement a fixed, identical width for all columns.
 - [x] Center the entire window so the middle column is perfectly centered on the screen.
 - [ ] When less than 5 columns are necessary, the central column must still remain on the same exact spot.
-- [ ] Use mouse-wheel to scroll through the current active list.
+- [x] Use mouse-wheel to scroll through the current active list.
 - [x] During search results are shown in the center column, while the other columns stay visible.
 - [x] Automatically remove common suffixes (e.g., " - Google Chrome") if they appear in more than half of all open windows of the same process.
 - [x] Fix navigation with `Alt + Left`/`Right` arrow keys.
@@ -51,6 +51,7 @@ Switcheroo displays windows in five columns:
 - [ ] Make it user configurable if single or double click is needed to switch to a window.
 - [ ] Make pinned windows configurable from the UI / Settings.
 - [ ] Allow to highlight some of the windows based on regex rules.
+- [ ] For left/app columns allow Alt+Shift+W to close all windows in that column.
 
 
 ## History
