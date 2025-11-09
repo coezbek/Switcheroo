@@ -48,7 +48,7 @@ Switcheroo displays windows in five columns:
 - [x] Fix navigation with `Alt + Left`/`Right` arrow keys.
 - [x] Resolve focus and selection issues when using the mouse to select an item.
 - [x] After pressing Alt+W the focus must be moved to the next item in the list.
-- [ ] Make it user configurable if single or double click is needed to switch to a window.
+- [x] Make it user configurable if single or double click is needed to switch to a window.
 - [ ] Make pinned windows configurable from the UI / Settings.
 - [ ] Allow to highlight some of the windows based on regex rules.
 - [ ] For left/app columns allow Alt+Shift+W to close all windows in that column.

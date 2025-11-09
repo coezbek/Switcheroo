@@ -29,6 +29,10 @@
                 Use <Span FontFamily="Consolas" FontWeight="Bold">Ctrl + Alt + Tab</Span> for displaying Switcheroo with search activated, or
                 press <Span FontFamily="Consolas" FontWeight="Bold">Alt + S</Span> when the Switcheroo overlay appears.
             </TextBlock>
+            <CheckBox Name="SwitchOnSingleClickCheckBox" Margin="5,5,5,1">Switch window on single click</CheckBox>
+            <TextBlock Margin="25,0,5,10" FontSize="10" Foreground="DimGray" TextWrapping="Wrap">
+                If unchecked, you will need to double-click to switch to a window.
+            </TextBlock>
             <CheckBox x:Name="RunAsAdministrator" Margin="5,5,5,1" Content="Run as Administrator *"/>
             <TextBlock Margin="25,0,5,10" FontSize="10" Foreground="DimGray" TextWrapping="Wrap">
                 This is needed if you want <Span FontFamily="Consolas" FontWeight="Bold">Alt + Tab</Span> to work when programs

@@ -32,6 +32,9 @@
     <Setting Name="EnableHotKey" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
+    <Setting Name="SwitchOnSingleClick" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
     <Setting Name="UserWidth" Type="System.Double" Scope="User">
       <Value Profile="(Default)">250</Value>
     </Setting>

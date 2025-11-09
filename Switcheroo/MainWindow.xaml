@@ -192,6 +192,7 @@
                     <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource {x:Type ListBoxItem}}">
                         <Setter Property="Padding" Value="0,5" />
                         <EventSetter Event="MouseDoubleClick" Handler="ListBoxItem_MouseDoubleClick" />
+                        <EventSetter Event="PreviewMouseLeftButtonUp" Handler="ListBoxItem_PreviewMouseLeftButtonUp" />
                     </Style>
                     <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="{x:Static SystemColors.HighlightColor}" Opacity=".4" />
                 </Grid.Resources>

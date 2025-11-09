@@ -145,6 +145,18 @@ namespace Switcheroo.Properties {
 
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool SwitchOnSingleClick {
+            get {
+                return ((bool)(this["SwitchOnSingleClick"]));
+            }
+            set {
+                this["SwitchOnSingleClick"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("-1")]
         public double UserWidth {
             get { 

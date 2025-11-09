@@ -811,8 +811,20 @@ namespace Switcheroo
 
         private void ListBoxItem_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            Switch();
-            e.Handled = true;
+            if (!Settings.Default.SwitchOnSingleClick)
+            {
+                Switch();
+                e.Handled = true;
+            }
+        }
+
+        private void ListBoxItem_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (Settings.Default.SwitchOnSingleClick)
+            {
+                Switch();
+                e.Handled = true;
+            }
         }
 
         private async void CloseWindow(object sender, ExecutedRoutedEventArgs e)
