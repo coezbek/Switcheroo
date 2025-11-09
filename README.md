@@ -1,9 +1,9 @@
 <img src="logo.png" alt="Switcheroo" width="48px" height="48px"> Switcheroo  [![Build Status](https://img.shields.io/appveyor/ci/kvakulo/switcheroo.svg)](https://ci.appveyor.com/project/kvakulo/switcheroo) ![GPL License](https://img.shields.io/badge/license-GPL-brightgreen.svg)
 ==========
 
-Switcheroo is for anyone who spends more time using a keyboard than a mouse.
-Instead of alt-tabbing through a (long) list of open windows, Switcheroo allows
-you to quickly switch to any window by typing in just a few characters of its title.
+Switcheroo is Alt-Tab replacement for Windows.
+
+The idea of this fork of to present windows in a column format: the most recent windows in the center column, the most common applications to the left, and pinned windows to the right.
 
 ## Screenshot
 
@@ -63,7 +63,7 @@ Switcheroo displays windows in five columns:
 - [x] For left/app columns allow Alt+Shift+W to close all windows in that column.
 - [ ] Add right click menu to windows for "Close", "Pin/Unpin", "Bring to front", "Open File Location", "Copy Window Title".
 - [x] Add Right Shift key support in shift key checks - from fork georgeyu/Switcheroo
-- [ ] New screenshot
+- [x] New screenshot
 
 ## Forks
 
