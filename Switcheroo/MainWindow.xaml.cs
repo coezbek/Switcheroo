@@ -143,20 +143,27 @@ namespace Switcheroo
             {
                 var key = (args.Key == Key.System) ? args.SystemKey : args.Key;
 
+                // Debugging output
+                // Console.WriteLine("KeyUp: " + key + " Modifiers: " + Keyboard.Modifiers + " AutoSwitch: " + _altTabAutoSwitch + " SystemKey: " + args.SystemKey);
+
                 // ... But only when the keys are release, the action is actually executed
                 if (key == Key.Enter && !Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                 {
                     Switch();
                 }
+                // Handle both Esc key and Alt+Q to dismiss Switcheroo
                 else if ((args.Key == Key.Escape) || (args.Key == Key.Q && Keyboard.Modifiers.HasFlag(ModifierKeys.Alt)))
                 {
                     HideWindow();
                 }
+                // This case handles when the user Presses and Releases the Left Alt key alone (note that args.SystemKey is used for Alt key) -> this would only happen while the window is open (for instance in search mode)
                 else if (args.SystemKey == Key.LeftAlt && !Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                 {
                     Switch();
                 }
-                else if (args.Key == Key.LeftAlt && _altTabAutoSwitch)
+                // This case handles when the user releases the Left Alt key which was held down when Tab was pressed
+                // We only do this if CTRL is not held down, as that would indicate the user wants to keep Switcheroo open
+                else if (args.Key == Key.LeftAlt && _altTabAutoSwitch && !Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                 {
                     Switch();
                 }

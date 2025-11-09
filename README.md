@@ -22,12 +22,13 @@ Action                         | Shortcut          | Remarks
 Activate Switcheroo            | `Alt + Space`     | This shortcut can be customized in _Options_
 Activate Switcheroo            | `Alt + Tab`       | Only works if enabled under _Options_
 _When Switcheroo is open_      |                   |
-Switch to selected window      | `Enter`           |
+Switch to selected window      | `Enter`           | Or release `Alt` if opened with `Alt + Tab` and `_altTabAutoSwitch` is enabled in _Options_. Note: independently from `_altTabAutoSwitch`, pressing and release `Alt` will select the currently highlighted window and switch to it.
 Close selected window          | `Alt or Ctrl + W` |
 Dismiss Switcheroo             | `Esc or Alt + Q`  |
 Up and down in list            | `Up` / `Down`     | Also works with `Alt + J` / `Alt + K` and when holding `Alt`. Also works with mouse wheel.
 Navigate columns               | `Left` / `Right`  | Also works when holding `Alt`. `Alt+Shift+Wheel` to scroll columns.
 Cycle most common apps         | `Alt + ~`         |
+Keep Switcheroo open           | `Ctrl`            | Hold while releasing `Alt` to keep Switcheroo open if in `_altTabAutoSwitch` mode.
 
 ## Column Mode
 
@@ -49,6 +50,7 @@ Switcheroo displays windows in five columns:
 - [x] Resolve focus and selection issues when using the mouse to select an item.
 - [x] After pressing Alt+W the focus must be moved to the next item in the list.
 - [x] Make it user configurable if single or double click is needed to switch to a window.
+- [x] Holding Ctrl while releasing Alt in `_altTabAutoSwitch` mode keeps Switcheroo open.
 - [ ] Make pinned windows configurable from the UI / Settings.
 - [ ] Allow to highlight some of the windows based on regex rules.
 - [ ] For left/app columns allow Alt+Shift+W to close all windows in that column.
