@@ -30,6 +30,13 @@ Navigate columns               | `Left` / `Right`  | Also works when holding `Al
 Cycle most common apps         | `Alt + ~`         |
 Keep Switcheroo open           | `Ctrl`            | Hold while releasing `Alt` to keep Switcheroo open if in `_altTabAutoSwitch` mode.
 
+### Mouse Usage
+
+- Double click a window to switch to it. (Configurable in _Options_ if single click is also possible.)
+- Mouse wheel scrolls through the current active list.
+- `Shift + Mouse Wheel` scrolls through columns.
+- `Shift + Click` and `Ctrl + Click` select windows for multi-selection (for closing multiple windows at once).
+
 ## Column Mode
 
 Switcheroo displays windows in five columns:

@@ -818,19 +818,22 @@ namespace Switcheroo
 
         private void ListBoxItem_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (!Settings.Default.SwitchOnSingleClick)
-            {
-                Switch();
-                e.Handled = true;
-            }
+            // Double-click always switches
+            Switch();
+            e.Handled = true;
         }
 
         private void ListBoxItem_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (Settings.Default.SwitchOnSingleClick)
             {
-                Switch();
-                e.Handled = true;
+                // Only switch on a single click if the user is NOT holding down a modifier key
+                // used for multi-selection. This allows Ctrl+Click and Shift+Click to work as expected.
+                if ((Keyboard.Modifiers & ModifierKeys.Control) == 0 && (Keyboard.Modifiers & ModifierKeys.Shift) == 0)
+                {
+                    Switch();
+                    e.Handled = true;
+                }
             }
         }
 
