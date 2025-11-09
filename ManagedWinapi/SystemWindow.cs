@@ -1081,7 +1081,7 @@ namespace ManagedWinapi.Windows
         /// <summary>
         /// Closes the window by sending the "WM_SYSCOMMAND" with the "SC_CLOSE" parameter.
         /// This equals that the user open the Window menu and click "Close". This method
-        /// seem to work in more scenaries than "SendClose()" and "PostClose()".
+        /// seem to work in more scenarios than "SendClose()" and "PostClose()".
         /// Also see: https://msdn.microsoft.com/en-us/library/windows/desktop/ms646360(v=vs.85).aspx
         /// </summary>
         public void Close()
