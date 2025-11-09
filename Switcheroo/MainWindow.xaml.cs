@@ -57,6 +57,7 @@ namespace Switcheroo
         public static readonly RoutedUICommand ScrollListDownCommand = new RoutedUICommand();
         public static readonly RoutedUICommand ScrollListUpCommand = new RoutedUICommand();
         public static readonly RoutedUICommand DismissCommand = new RoutedUICommand();
+        public static readonly RoutedUICommand CloseColumnCommand = new RoutedUICommand();
         private OptionsWindow _optionsWindow;
         private AboutWindow _aboutWindow;
         private AltTabHook _altTabHook;
@@ -837,6 +838,11 @@ namespace Switcheroo
             }
         }
 
+        /// <summary>
+        /// Event handler for the CloseWindow command (e.g., Ctrl+W).
+        /// Closes all currently selected windows in the active column.
+        /// This operation will attempt to close all selected windows, even if some fail.
+        /// </summary>
         private async void CloseWindow(object sender, ExecutedRoutedEventArgs e)
         {
             var currentListBox = _listBoxes[_activeColumnIndex];
@@ -846,44 +852,104 @@ namespace Switcheroo
                 return;
             }
 
-            // Store the index to intelligently re-select after deletion
-            var selectedIndex = currentListBox.SelectedIndex;
-            var originalIndex = _activeColumnIndex;
+            var windowsToClose = currentListBox.SelectedItems.Cast<AppWindowViewModel>().ToList();
+            await CloseWindowsAsync(windowsToClose, abortOnFailure: false);
+            e.Handled = true;
+        }
 
-            var windows = currentListBox.SelectedItems.Cast<AppWindowViewModel>().ToList();
-            foreach (var win in windows)
+        /// <summary>
+        /// Event handler for the CloseColumn command (e.g., Alt+Shift+W).
+        /// Closes all windows in one of the three leftmost application columns.
+        /// This is a sequential operation that will stop if any window fails to close.
+        /// </summary>
+        private async void CloseColumn(object sender, ExecutedRoutedEventArgs e)
+        {
+            // This command only applies to the three leftmost "app" columns.
+            if (_activeColumnIndex >= 0 && _activeColumnIndex <= 2)
+            {
+                var currentListBox = _listBoxes[_activeColumnIndex];
+                if (currentListBox.Items.Count > 0)
+                {
+                    var windowsToClose = currentListBox.Items.Cast<AppWindowViewModel>().ToList();
+                    await CloseWindowsAsync(windowsToClose, abortOnFailure: true);
+                }
+            }
+            e.Handled = true;
+        }
+
+        /// <summary>
+        /// The main worker method for closing one or more windows and intelligently updating the UI.
+        /// </summary>
+        /// <param name="windowsToClose">The collection of windows to attempt to close.</param>
+        /// <param name="abortOnFailure">If true, the process will stop if any single window fails to close.</param>
+        private async Task CloseWindowsAsync(IEnumerable<AppWindowViewModel> windowsToClose, bool abortOnFailure)
+        {
+            // Before closing, capture the current state for intelligent UI updates later.
+            var originalIndex = _activeColumnIndex;
+            var originalListBox = _listBoxes[originalIndex];
+            var selectedIndex = originalListBox.SelectedIndex;
+
+            // Calculate the expected index adjustment. We need to know how many windows *before*
+            // our selection are being closed, so we can adjust our selection index downward to maintain
+            // the cursor's relative position.
+            var windowsToCloseSet = new HashSet<AppWindowViewModel>(windowsToClose);
+            int adjustment = 0;
+            for (int i = 0; i < selectedIndex; i++)
+            {
+                if (windowsToCloseSet.Contains(originalListBox.Items[i]))
+                {
+                    adjustment++;
+                }
+            }
+
+            // Sequentially attempt to close the windows.
+            foreach (var win in windowsToClose)
             {
                 bool isClosed = await _windowCloser.TryCloseAsync(win);
                 if (isClosed)
+                {
                     RemoveWindowFromAllLists(win);
+                }
+                else if (abortOnFailure)
+                {
+                    // A window failed to close, and we are configured to abort the entire operation.
+                    break;
+                }
             }
 
-            // If we just closed the very last window, hide the app.
+            // After the operation is complete, update the UI.
             if (_unfilteredWindowList.Count == 0)
             {
                 HideWindow();
-                e.Handled = true;
                 return;
             }
 
-            // If the column we were in is now empty, find the next logical column by moving towards the center.
-            if (currentListBox.Items.Count == 0)
+            if (originalListBox.Items.Count > 0)
             {
-                if (originalIndex < 3) // Column was on the left of center.
+                // The column is still active, so update the selection within it.
+                // Apply the calculated adjustment to find the new logical index.
+                int newSelectedIndex = selectedIndex - adjustment;
+
+                // Clamp the new index to be within the valid range of the now-smaller list.
+                originalListBox.SelectedIndex = Math.Max(0, Math.Min(newSelectedIndex, originalListBox.Items.Count - 1));
+            }
+            else
+            {
+                // The column we were in is now empty, find the next logical column to focus on.
+                bool foundNewColumn = false;
+                // Search right, towards the center.
+                for (int i = originalIndex + 1; i < _listBoxes.Count; i++)
                 {
-                    // Search right, towards the center, for the next available column.
-                    for (int i = originalIndex + 1; i < _listBoxes.Count; i++)
+                    if (_listBoxes[i].Items.Count > 0)
                     {
-                        if (_listBoxes[i].Items.Count > 0)
-                        {
-                            SetActiveColumn(i);
-                            break;
-                        }
+                        SetActiveColumn(i);
+                        foundNewColumn = true;
+                        break;
                     }
                 }
-                else // Column was on the right of center (or the center itself).
+                // If not found, search left.
+                if (!foundNewColumn)
                 {
-                    // Search left, towards the center, for the next available column.
                     for (int i = originalIndex - 1; i >= 0; i--)
                     {
                         if (_listBoxes[i].Items.Count > 0)
@@ -894,22 +960,10 @@ namespace Switcheroo
                     }
                 }
             }
-            else
-            {
-                // The current column is not empty, so just update the selection within it.
-                if (selectedIndex >= currentListBox.Items.Count)
-                {
-                    currentListBox.SelectedIndex = currentListBox.Items.Count - 1;
-                }
-                else
-                {
-                    currentListBox.SelectedIndex = selectedIndex;
-                }
-                ScrollSelectedItemIntoView();
-            }
 
-            e.Handled = true;
+            ScrollSelectedItemIntoView();
         }
+
         
         private void DismissWindow(object sender, ExecutedRoutedEventArgs e)
         {

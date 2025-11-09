@@ -16,6 +16,8 @@
                         Executed="CloseWindow" />
         <CommandBinding Command="local:MainWindow.SwitchToWindowCommand"
                         Executed="OnEnterPressed" />
+        <CommandBinding Command="local:MainWindow.CloseColumnCommand"
+                        Executed="CloseColumn" />
         <CommandBinding Command="local:MainWindow.ScrollListUpCommand"
                         Executed="ScrollListUp" />
         <CommandBinding Command="local:MainWindow.ScrollListDownCommand"
@@ -28,6 +30,8 @@
         <KeyBinding Command="local:MainWindow.CloseWindowCommand" Key="W" Modifiers="Alt" />
         <KeyBinding Command="local:MainWindow.CloseWindowCommand" Key="W" Modifiers="Ctrl" />
         <KeyBinding Command="local:MainWindow.CloseWindowCommand" Key="X" Modifiers="Alt" />
+        <KeyBinding Command="local:MainWindow.CloseColumnCommand" Key="W" Modifiers="Shift+Alt" />
+        <KeyBinding Command="local:MainWindow.CloseColumnCommand" Key="X" Modifiers="Shift+Alt" />
         <KeyBinding Command="local:MainWindow.ScrollListUpCommand" Key="Up" />
         <KeyBinding Command="local:MainWindow.ScrollListDownCommand" Key="Down" />
         <KeyBinding Command="local:MainWindow.ScrollListUpCommand" Key="K" Modifiers="Alt" />
