@@ -63,18 +63,23 @@ Switcheroo displays windows in five columns:
 - [x] For left/app columns allow Alt+Shift+W to close all windows in that column.
 - [ ] Add right click menu to windows for "Close", "Pin/Unpin", "Bring to front", "Open File Location", "Copy Window Title".
 - [x] Add Right Shift key support in shift key checks - from fork georgeyu/Switcheroo
+- [ ] New screenshot
 
 ## Forks
 
-Relative to [@kvakulo kvakulo / Switcheroo](https://github.com/kvakulo/Switcheroo)
+Relative to [@kvakulo kvakulo / Switcheroo](https://github.com/kvakulo/Switcheroo).
+
+`[x]` indicates that I have either merged relevant changes or found the fork not applicable to this version.
 
 *   [@advx9600 advx9600 / Switcheroo](https://github.com/advx9600/Switcheroo) - Ahead: 11, Behind: 0
 *   [@bakus522 bakus522 / Switcheroo](https://github.com/bakus522/Switcheroo) - Ahead: 4, Behind: 0
-*   [@boisenme boisenme / Switcheroo](https://github.com/boisenme/Switcheroo) - Ahead: 1, Behind: 0
+* [x] [@boisenme boisenme / Switcheroo](https://github.com/boisenme/Switcheroo) - Ahead: 1, Behind: 0
+    * Reads Chrome tabs and allows switching to them. => Out of scope for this fork.
 *   [@byguid byguid / switcheroo](https://github.com/byguid/switcheroo) - Ahead: 3, Behind: 0
 *   [@crar01 crar01 / Switcheroo](https://github.com/crar01/Switcheroo) - Ahead: 10, Behind: 0
     *   [@dvygolov dvygolov / Switcheroo](https://github.com/dvygolov/Switcheroo) - Ahead: 5, Behind: 0
-*   [@cutecycle cutecycle / Switcheroo](https://github.com/cutecycle/Switcheroo) - Ahead: 8, Behind: 28
+* [x] [@cutecycle cutecycle / Switcheroo](https://github.com/cutecycle/Switcheroo) - Ahead: 8, Behind: 28
+    * Closes all windows of selected process with Ctrl+Shift+W => We are adding this for our columns with Alt+Shift+W
 *   [@daanzu daanzu / Switcheroo](https://github.com/daanzu/Switcheroo) - Ahead: 72, Behind: 0
     *   [@jsonMartin jsonMartin / Switcheroo](https://github.com/jsonMartin/Switcheroo) - Ahead: 13, Behind: 0
         *   [@nqbao1234 nqbao1234 / Switcheroo](https://github.com/nqbao1234/Switcheroo) - Ahead: 3, Behind: 0
@@ -87,24 +92,31 @@ Relative to [@kvakulo kvakulo / Switcheroo](https://github.com/kvakulo/Switchero
         *   [@r-Larch r-Larch / Switcheroo](https://github.com/r-Larch/Switcheroo) - Ahead: 19, Behind: 0
     *   [@yuriiwanchev yuriiwanchev / Switcheroo](https://github.com/yuriiwanchev/Switcheroo) - Ahead: 1, Behind: 0
 * [x] [@georgeyu georgeyu / Switcheroo](https://github.com/georgeyu/Switcheroo) - Ahead: 1, Behind: 0
-*   [@GrantByrne GrantByrne / Switcheroo](https://github.com/GrantByrne/Switcheroo) - Ahead: 11, Behind: 0
+* [x] [@GrantByrne GrantByrne / Switcheroo](https://github.com/GrantByrne/Switcheroo) - Ahead: 11, Behind: 0
+    * Moved to .Net 6, but reformatted codebase.
 *   [@hahv hahv / HaHV_Switcheroo](https://github.com/hahv/HaHV_Switcheroo) - Ahead: 1, Behind: 0
 *   [@insertt insertt / Switcheroo](https://github.com/insertt/Switcheroo) - Ahead: 2, Behind: 0
 *   [@Jijjy Jijjy / Switcheroo](https://github.com/Jijjy/Switcheroo) - Ahead: 15, Behind: 19
 *   [@joonofafa joonofafa / Switcheroo](https://github.com/joonofafa/Switcheroo) - Ahead: 11, Behind: 0
 *   [@koglerch13 koglerch13 / Switcheroo](https://github.com/koglerch13/Switcheroo) - Ahead: 1, Behind: 0
-*   [@lances101 lances101 / Switcheroo-Edited-For-Wox](https://github.com/lances101/Switcheroo-Edited-For-Wox) - Ahead: 3, Behind: 19
-*   [@MichiBaum MichiBaum / Switcheroo](https://github.com/MichiBaum/Switcheroo) - Ahead: 42, Behind: 0
-*   [@MuffinK MuffinK / Switcheroo](https://github.com/MuffinK/Switcheroo) - Ahead: 3, Behind: 0
+* [x] [@lances101 lances101 / Switcheroo-Edited-For-Wox](https://github.com/lances101/Switcheroo-Edited-For-Wox) - Ahead: 3, Behind: 19
+    * For some sort of plugin integration?
+* [x] [@MichiBaum MichiBaum / Switcheroo](https://github.com/MichiBaum/Switcheroo) - Ahead: 42, Behind: 0
+    * I didn't see any functionality changes, only migration to different .Net version and reformatting.
+* [x] [@MuffinK MuffinK / Switcheroo](https://github.com/MuffinK/Switcheroo) - Ahead: 3, Behind: 0
+    * Keyboard shortcut changes only.
 *   [@raymond-w-ko raymond-w-ko / Switcheroo](https://github.com/raymond-w-ko/Switcheroo) - Ahead: 7, Behind: 0
 *   [@ryuslash ryuslash / Switcheroo](https://github.com/ryuslash/Switcheroo) - Ahead: 7, Behind: 0
 *   [@schMarXman schMarXman / Switcheroo](https://github.com/schMarXman/Switcheroo) - Ahead: 1, Behind: 0
 *   [@sohaibz-leaders sohaibz-leaders / Switcheroo](https://github.com/sohaibz-leaders/Switcheroo) - Ahead: 1, Behind: 0
 *   [@szym1991 szym1991 / Switcheroo](https://github.com/szym1991/Switcheroo) - Ahead: 1, Behind: 0
-*   [@trond-snekvik trond-snekvik / Switcheroo](https://github.com/trond-snekvik/Switcheroo) - Ahead: 1, Behind: 19
+    * [ ] Scrollbar styling => Investigate.
+* [x] [@trond-snekvik trond-snekvik / Switcheroo](https://github.com/trond-snekvik/Switcheroo) - Ahead: 1, Behind: 19
+    * [x] J/K Keybindings for up/down navigation
 *   [@tversteeg tversteeg / Switcheroo](https://github.com/tversteeg/Switcheroo) - Ahead: 12, Behind: 0
 *   [@valuex valuex / Switcheroo](https://github.com/valuex/Switcheroo) - Ahead: 6, Behind: 0
-*   [@WizaXxX WizaXxX / Switcheroo_1C](https://github.com/WizaXxX/Switcheroo_1C) - Ahead: 6, Behind: 0
+* [x] [@WizaXxX WizaXxX / Switcheroo_1C](https://github.com/WizaXxX/Switcheroo_1C) - Ahead: 6, Behind: 0
+    * I think this was an attempt to hide malware in Switcheroo
 
 ## History
 
