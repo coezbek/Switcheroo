@@ -40,7 +40,8 @@ namespace Switcheroo
         public event AltTabHookEventHandler Pressed;
         private const int AltKey = 32;
         private const int CtrlKey = 11;
-        private readonly KeyboardKey _shiftKey = new KeyboardKey(Keys.LShiftKey);
+        private readonly KeyboardKey _leftShiftKey = new KeyboardKey(Keys.LShiftKey);
+        private readonly KeyboardKey _rightShiftKey = new KeyboardKey(Keys.RShiftKey);
         private readonly KeyboardKey _ctrlKey = new KeyboardKey(Keys.LControlKey);
         private readonly KeyboardKey _altKey = new KeyboardKey(Keys.LMenu);
         private readonly int WM_KEYDOWN = 0x0100;
@@ -74,7 +75,7 @@ namespace Switcheroo
                 return;
             }
 
-            var shiftKeyDown = IsKeyDown(_shiftKey);
+            var shiftKeyDown = IsKeyDown(_leftShiftKey) || IsKeyDown(_rightShiftKey);
             var ctrlKeyDown = IsKeyDown(_ctrlKey);
 
             var eventArgs = OnPressed(shiftKeyDown, ctrlKeyDown);
