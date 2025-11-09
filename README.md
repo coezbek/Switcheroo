@@ -49,7 +49,7 @@ Switcheroo displays windows in five columns:
 - [x] Ensure the 10 most recent windows remain in the center column, even if duplicated in other columns.
 - [x] Implement a fixed, identical width for all columns.
 - [x] Center the entire window so the middle column is perfectly centered on the screen.
-- [ ] When less than 5 columns are necessary, the central column must still remain on the same exact spot.
+- [x] When less than 5 columns are necessary, the central column must still remain on the same exact spot.
 - [x] Use mouse-wheel to scroll through the current active list.
 - [x] During search results are shown in the center column, while the other columns stay visible.
 - [x] Automatically remove common suffixes (e.g., " - Google Chrome") if they appear in more than half of all open windows of the same process.

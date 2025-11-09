@@ -457,39 +457,85 @@ namespace Switcheroo
             }
         }
 
-        private double ComputeDefaultWidth()
-        {
-            double columnWidth = Settings.Default.UserWidth > 0
-                ? Settings.Default.UserWidth
-                : 250;
-            columnWidth = Math.Max(100, columnWidth);
-
-            double screenWidth = SystemParameters.PrimaryScreenWidth;
-
-            return Math.Min(columnWidth * 5, screenWidth * 0.95);
-        }
-
         /// <summary>
-        /// Place the Switcheroo window in the center of the screen
+        /// Configures the column layout and places the Switcheroo window in the center of the screen.
+        /// The logic ensures the center column remains anchored to the middle of the screen.
+        /// Note: This should only be called during/after loading data on initial show.
         /// </summary>
         private void CenterWindow()
         {
-            // Set the correct width
-            Width = ComputeDefaultWidth();
+            double columnWidth = Math.Max(100, Settings.Default.UserWidth > 0 ? Settings.Default.UserWidth : 250);
+
+            // --- Part 1: Configure Layout ---
+            // Set column widths and visibility based on whether they contain items.
+            var numVisibleLeftColumns = 0;
+            if (_listLeft1.Any())
+            {
+                numVisibleLeftColumns++;
+                ColLeft1.Width = new GridLength(columnWidth);
+                ListBoxLeft1.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                ColLeft1.Width = new GridLength(0);
+                ListBoxLeft1.Visibility = Visibility.Collapsed;
+            }
+
+            if (_listLeft2.Any())
+            {
+                numVisibleLeftColumns++;
+                ColLeft2.Width = new GridLength(columnWidth);
+                ListBoxLeft2.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                ColLeft2.Width = new GridLength(0);
+                ListBoxLeft2.Visibility = Visibility.Collapsed;
+            }
+
+            if (_listLeft3.Any())
+            {
+                numVisibleLeftColumns++;
+                ColLeft3.Width = new GridLength(columnWidth);
+                ListBoxLeft3.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                ColLeft3.Width = new GridLength(0);
+                ListBoxLeft3.Visibility = Visibility.Collapsed;
+            }
+
+            // The center column is always conceptually present and given width.
+            ColCenter.Width = new GridLength(columnWidth);
+            ListBoxCenter.Visibility = Visibility.Visible;
+
+            var numVisibleRightColumns = 0;
+            if (_listRight.Any())
+            {
+                numVisibleRightColumns = 1;
+                ColRight.Width = new GridLength(columnWidth);
+                ListBoxRight.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                ColRight.Width = new GridLength(0);
+                ListBoxRight.Visibility = Visibility.Collapsed;
+            }
+
+            // --- Part 2: Position Window ---
+            var numColumns = numVisibleLeftColumns + 1 + numVisibleRightColumns;
+            double screenWidth = SystemParameters.PrimaryScreenWidth;
+
+            // Set the correct final width & height
+            Width = Math.Min(numColumns * columnWidth, screenWidth * 0.95);
             Border.MaxHeight = SystemParameters.PrimaryScreenHeight * 0.9;
 
             // Force layout update to get correct ActualHeight for vertical centering.
             UpdateLayout();
 
-            var columnWidth = Settings.Default.UserWidth;
-            var numVisibleLeftColumns = 3;
-            // if (_listLeft1.Any()) 
-            //   numVisibleLeftColumns++;
-
-            // The anchor is the screen's center. We want the left side of our middle column to align with it.
-            var centerColumnCenterOffset = (numVisibleLeftColumns * columnWidth);
-            
-            Left = (SystemParameters.PrimaryScreenWidth / 2.0) - centerColumnCenterOffset;
+            // The anchor is the screen's center. We want the left side of our middle column to be offset from that.
+            var centerColumnLeftOffset = (numVisibleLeftColumns * columnWidth);
+            Left = Math.Max(0, (SystemParameters.PrimaryScreenWidth / 2.0) - centerColumnLeftOffset);
 
             // Try to top align the window to 256px top if sufficient space.
             Top = Math.Min(256, (SystemParameters.PrimaryScreenHeight / 2.0) - (ActualHeight / 2.0));
