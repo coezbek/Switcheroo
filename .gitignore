@@ -182,5 +182,7 @@ Desktop.ini
 $RECYCLE.BIN/
 
 Installer/Output
+Installer/ProgramFiles/
 .vscode/
 *.exe
+forkdiffs/
