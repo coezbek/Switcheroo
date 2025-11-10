@@ -49,12 +49,12 @@ jobs:
             $RELEASE_NAME = "Release $VERSION"
           }
           else {
-            # Dev build: next MINOR, PATCH=0, revision = run number
+            # Dev build: next PATCH, revision = run number
             $norm = $lastTag.TrimStart('v') -replace '-.*','' -replace '\+.*',''
             $p = $norm.Split('.'); while ($p.Count -lt 3) { $p += '0' }
             $maj=[int]$p[0]; $min=[int]$p[1]; $pat=[int]$p[2]
 
-            $maj2=$maj; $min2=$min+1; $pat2=0
+            $maj2=$maj; $min2=$min; $pat2=$pat+1
             $run="${{ github.run_number }}"
             $shaShort = "${{ github.sha }}".Substring(0,7)
 
