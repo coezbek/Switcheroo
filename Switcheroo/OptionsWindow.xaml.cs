@@ -78,14 +78,19 @@ namespace Switcheroo
 
         private void Ok_Click(object sender, RoutedEventArgs e)
         {
-            var closeOptionsWindow = true;
-
             try
             {
                 _hotkey.Enabled = false;
 
-                if (Settings.Default.EnableHotKey)
+                if (HotKeyCheckBox.IsChecked.GetValueOrDefault())
                 {
+                    if (_hotkeyViewModel.KeyCode == Key.None)
+                    {
+                        MessageBox.Show("No shortcut key has been selected. Please select a key or disable the shortcut.",
+                            "Invalid shortcut", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                
                     // Change the active hotkey
                     _hotkey.Alt = _hotkeyViewModel.Alt;
                     _hotkey.Shift = _hotkeyViewModel.Shift;
@@ -93,16 +98,21 @@ namespace Switcheroo
                     _hotkey.WindowsKey = _hotkeyViewModel.Windows;
                     _hotkey.KeyCode = (Keys) KeyInterop.VirtualKeyFromKey(_hotkeyViewModel.KeyCode);
                     _hotkey.Enabled = true;
+                    _hotkey.SaveSettings();
                 }
-
-                _hotkey.SaveSettings();
             }
             catch (HotkeyAlreadyInUseException)
             {
                 var boxText = "Sorry! The selected shortcut for activating Switcheroo is in use by another program. " +
                               "Please choose another.";
                 MessageBox.Show(boxText, "Shortcut already in use", MessageBoxButton.OK, MessageBoxImage.Warning);
-                closeOptionsWindow = false;
+                return;
+            }
+
+            if (!AltTabCheckBox.IsChecked.GetValueOrDefault() && !HotKeyCheckBox.IsChecked.GetValueOrDefault())
+            {
+                MessageBox.Show("Both activation methods for Switcheroo have been disabled. Switcheroo won't open.",
+                    "No activation method selected", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
 
             Settings.Default.EnableHotKey = HotKeyCheckBox.IsChecked.GetValueOrDefault();
@@ -116,11 +126,8 @@ namespace Switcheroo
                 Settings.Default.UserWidth = columnWidth;
             }
             Settings.Default.Save();
-
-            if (closeOptionsWindow)
-            {
-                Close();
-            }
+                
+            Close();
         }
 
         private void HotkeyPreview_OnPreviewKeyDown(object sender, KeyEventArgs e)
@@ -130,6 +137,15 @@ namespace Switcheroo
 
             // Fetch the actual shortcut key
             var key = (e.Key == Key.System ? e.SystemKey : e.Key);
+
+            // Backspace and Delete clear the current hotkey
+            // They can't be used as hotkeys
+            if (key == Key.Back || key == Key.Delete)
+            {
+                _hotkeyViewModel = new HotkeyViewModel();
+                HotkeyPreview.Text = string.Empty;
+                return;
+            }
 
             // Ignore modifier keys
             if (key == Key.LeftShift || key == Key.RightShift
