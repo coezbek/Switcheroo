@@ -62,8 +62,12 @@ Switcheroo displays windows in five columns:
 - [ ] Allow to highlight some of the windows based on regex rules.
 - [x] For left/app columns allow Alt+Shift+W to close all windows in that column.
 - [ ] Add right click menu to windows for "Close", "Pin/Unpin", "Bring to front", "Open File Location", "Copy Window Title".
+  - [ ] Tagging windows - https://github.com/kvakulo/Switcheroo/issues/174
+  - [ ] Assign shortcut - https://github.com/elig0n/Switcheroo/issues/30
 - [x] Add Right Shift key support in shift key checks - from fork georgeyu/Switcheroo
 - [x] New screenshot
+- [ ] Show message bubble when Switcheroo has started.
+- [ ] Add option to disable stand-alone `ALT` keypress to switch to selected window. Currently this is enabled by default, but a bit surprising (see: https://github.com/kvakulo/Switcheroo/pull/128)
 - [x] Fix: Empty Shortcut will use Backspace as the shortcut - https://github.com/kvakulo/Switcheroo/issues/172
 - [x] Feat: Support for middle click to close windows - https://github.com/kvakulo/Switcheroo/issues/166  
 
@@ -77,9 +81,11 @@ Relative to [@kvakulo kvakulo / Switcheroo](https://github.com/kvakulo/Switchero
 *   [@bakus522 bakus522 / Switcheroo](https://github.com/bakus522/Switcheroo) - Ahead: 4, Behind: 0
 * [x] [@boisenme boisenme / Switcheroo](https://github.com/boisenme/Switcheroo) - Ahead: 1, Behind: 0
     * Reads Chrome tabs and allows switching to them. => Out of scope for this fork.
-*   [@byguid byguid / switcheroo](https://github.com/byguid/switcheroo) - Ahead: 3, Behind: 0
+* [x]  [@byguid byguid / switcheroo](https://github.com/byguid/switcheroo) - Ahead: 3, Behind: 0
+    * [x] Hot-key release bug
 *   [@crar01 crar01 / Switcheroo](https://github.com/crar01/Switcheroo) - Ahead: 10, Behind: 0
-    *   [@dvygolov dvygolov / Switcheroo](https://github.com/dvygolov/Switcheroo) - Ahead: 5, Behind: 0
+    * [x] [@dvygolov dvygolov / Switcheroo](https://github.com/dvygolov/Switcheroo) - Ahead: 5, Behind: 0
+        * [x] Github Actions Release/Build support
 * [x] [@cutecycle cutecycle / Switcheroo](https://github.com/cutecycle/Switcheroo) - Ahead: 8, Behind: 28
     * Closes all windows of selected process with Ctrl+Shift+W => We are adding this for our columns with Alt+Shift+W
 *   [@daanzu daanzu / Switcheroo](https://github.com/daanzu/Switcheroo) - Ahead: 72, Behind: 0
