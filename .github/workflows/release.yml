@@ -1,0 +1,106 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main  # Draft releases on regular pushes
+    tags: # Published releases on version tags
+      - v[0-9]+.[0-9]+.[0-9]+
+  workflow_dispatch:  # Allows manual triggering from GitHub UI
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Setup NuGet
+        uses: nuget/setup-nuget@v2
+
+      - name: Restore NuGet packages
+        run: nuget restore Switcheroo.sln
+      
+      - name: Determine release type and version
+        id: release-info
+        run: |
+          if ("${{ github.ref }}" -match "^refs/tags/v") {
+            # This is a version tag - create published release from version tag name
+            $isDraft = "false"
+            $version = "${{ github.ref_name }}"
+            $releaseName = "Release $version"
+          } else {
+            # This is a regular push or manual trigger - create draft release
+            $isDraft = "true"
+            $timestamp = Get-Date -Format "yyyy.MM.dd.HHmmss"
+            $version = "dev-$timestamp"
+            $releaseName = "Draft Build - $timestamp"
+          }
+          echo "IS_DRAFT=$isDraft" >> $env:GITHUB_ENV
+          echo "VERSION=$version" >> $env:GITHUB_ENV
+          echo "RELEASE_NAME=$releaseName" >> $env:GITHUB_ENV
+        shell: pwsh
+
+      - name: Update AssemblyInfo # Ensure that generated releases have correct version numbers
+        run: |
+          $version = "${{ env.VERSION }}".replace('v', '') # Remove 'v' prefix if present
+          $files = Get-ChildItem -Path . -Filter "AssemblyInfo.cs" -Recurse
+          foreach ($file in $files) {
+            (Get-Content $file.FullName) |
+            ForEach-Object { $_ -replace 'AssemblyVersion\(".*"\)', "AssemblyVersion(""$version"")" } |
+            ForEach-Object { $_ -replace 'AssemblyFileVersion\(".*"\)', "AssemblyFileVersion(""$version"")" } |
+            Set-Content $file.FullName
+          }
+        shell: pwsh
+
+      - name: Build Installers
+        run: msbuild Installer\Build.xml /t:Main /p:Configuration=Release /p:Platform="Any CPU"
+
+      - name: Package release files
+        run: |
+          $version = "${{ env.VERSION }}"
+          # The installer script places output in the "Output" directory.
+          # We will zip this entire directory for the release.
+          $outputDir = "Installer\Output" 
+          $outputZip = "Switcheroo-installers-$version.zip"
+          Compress-Archive -Path "$outputDir\*" -DestinationPath $outputZip
+          echo "RELEASE_ZIP=$outputZip" >> $env:GITHUB_ENV
+        shell: pwsh
+
+      - name: Build solution
+        run: msbuild Switcheroo.sln /p:Configuration=Release /p:Platform="Any CPU"
+
+      - name: Package release files
+        run: |
+          $releaseDir = "Switcheroo\bin\Release"
+          $version = "${{ env.VERSION }}"
+          $outputZip = "Switcheroo-$version.zip"
+          Compress-Archive -Path "$releaseDir\*" -DestinationPath $outputZip
+          echo "RELEASE_ZIP=$outputZip" >> $env:GITHUB_ENV
+        shell: pwsh
+
+      - name: Build changelog from conventional commits
+        id: changelog
+        uses: requarks/changelog-action@v1
+        with:
+          token: ${{ github.token }}
+          tag: ${{ env.VERSION }}
+          writeToFile: false
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.VERSION }}
+          target_commitish: ${{ github.sha }}
+          draft: ${{ env.IS_DRAFT == 'true' }}
+          files: ${{ env.RELEASE_ZIP }}
+          fail_on_unmatched_files: true
+          generate_release_notes: false
+          name: ${{ env.RELEASE_NAME }}
+          body: ${{ steps.changelog.outputs.changes }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

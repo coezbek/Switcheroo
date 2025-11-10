@@ -1,4 +1,4 @@
-#define MyAppName "Switcheroo"
+#define MyAppName "Switcheroo++"
 #define MyAppPublisher "Christopher Özbek"
 #define MyAppURL "https://github.com/coezbek/switcheroo"
 #define MyAppExeName "switcheroo.exe"
