@@ -2,20 +2,20 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>switcheroo</id>
-    <title>Switcheroo</title>
-    <version>0.9.2.111</version>
-    <authors>Regin Larsen, James Sulak</authors>
-    <owners>Regin Larsen</owners>
+    <title>Switcheroo++</title>
+    <version>0.9.3.112</version>
+    <authors>Christopher Özbek, Regin Larsen, James Sulak</authors>
+    <owners>Christopher Özbek, </owners>
     <summary>An alternative alt-tab task switcher</summary>
-    <description>Switcheroo is for anyone who spends more time using a keyboard than a mouse. Instead of alt-tabbing through a (long) list of open windows, Switcheroo allows you to quickly switch to any window by typing in just a few characters of its title.</description>
-    <projectUrl>http://www.switcheroo.io</projectUrl>
+    <description>Switcheroo++ is Alt-Tab replacement for Windows.</description>
+    <projectUrl>https://github.com/coezbek/switcheroo</projectUrl>
     <tags>switcheroo</tags>
     <copyright>GNU GPL 3</copyright>
-    <licenseUrl>http://www.switcheroo.io/</licenseUrl>
+    <licenseUrl>https://github.com/coezbek/switcheroo</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <iconUrl>https://cdn.rawgit.com/kvakulo/Switcheroo/8ff2eaaee6092b05e00b21f78745c1d2d834e0ae/logo.png</iconUrl>
+    <iconUrl>https://cdn.rawgit.com/coezbek/Switcheroo/8ff2eaaee6092b05e00b21f78745c1d2d834e0ae/logo.png</iconUrl>
     <dependencies>
-      <dependency id="switcheroo.install" version="0.9.2.111" />
+      <dependency id="switcheroo.install" version="0.9.3.112" />
     </dependencies>
     <releaseNotes></releaseNotes>
   </metadata>

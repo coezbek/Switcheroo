@@ -10,15 +10,17 @@
     <StackPanel Margin="10">
         <ScrollViewer Height="250">
             <TextBlock TextWrapping="Wrap" Margin="0,0,10,0" Padding="0,0,0,30">
-                <Bold>Switcheroo</Bold>
+                <Bold>Switcheroo++</Bold>
                 <LineBreak />
-                <Italic>The humble incremental-search task switcher for Windows</Italic>
+                <Italic>The Alt+Tab Replacement for Windows with columns.</Italic>
                 <LineBreak />
-                <Hyperlink RequestNavigate="HandleRequestNavigate" NavigateUri="http://www.switcheroo.io">www.switcheroo.io</Hyperlink>
+                <Hyperlink RequestNavigate="HandleRequestNavigate" NavigateUri="http://github.com/coezbek/switcheroo">http://github.com/coezbek/switcheroo</Hyperlink>
                 <LineBreak />
                 <LineBreak />
                 Version: <Span Name="VersionNumber" />
                 <LineBreak />
+                <LineBreak />
+                © Copyright 2025 Christopher Özbek
                 <LineBreak />
                 © Copyright 2014 Regin Larsen
                 <LineBreak />

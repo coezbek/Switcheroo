@@ -1,5 +1,10 @@
 Change log
 ----------
+### 2025-11-10: v0.9.3 ###
+- Column-based re-design.
+- Added various short-cuts for navigation and window management.
+- Mouse-wheel handling
+
 ### 2015-04-28: v0.9.0 ###
 - Much improved window closing: Switcheroo now stays open, so you can close several windows faster. Thanks to @HellBrick for proposing this idea and sending a pull request! :+1: (#25)
 - The focused window is now at the bottom of the list. This makes it faster to switch to the next window as you just need to press Alt+Enter, Enter. No more need to press Arrow Down. This makes Alt+Enter and Alt+Tab work in the same way (#24)

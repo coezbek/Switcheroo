@@ -1,6 +1,6 @@
 #define MyAppName "Switcheroo"
-#define MyAppPublisher "Regin Larsen"
-#define MyAppURL "http://www.switcheroo.io"
+#define MyAppPublisher "Christopher Özbek"
+#define MyAppURL "https://github.com/coezbek/switcheroo"
 #define MyAppExeName "switcheroo.exe"
 #define MyAppPath SourcePath + "ProgramFiles"
 #define MyAppVer = GetFileVersion(MyAppPath + "\switcheroo.exe")

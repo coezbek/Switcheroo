@@ -1,6 +1,6 @@
 ﻿/*
  * Switcheroo - The incremental-search task switcher for Windows.
- * http://www.switcheroo.io/
+ * https://github.com/coezbek/switcheroo
  * Copyright 2009, 2010 James Sulak
  * Copyright 2014 Regin Larsen
  * 
