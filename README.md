@@ -1,19 +1,19 @@
-<img src="logo.png" alt="Switcheroo" width="48px" height="48px"> Switcheroo  [![Build Status](https://img.shields.io/appveyor/ci/kvakulo/switcheroo.svg)](https://ci.appveyor.com/project/kvakulo/switcheroo) ![GPL License](https://img.shields.io/badge/license-GPL-brightgreen.svg)
+<img src="logo.png" alt="Switcheroo" width="48px" height="48px"> Switcheroo++ [![Build Status](https://img.shields.io/appveyor/ci/coezbek/switcheroo.svg)](https://ci.appveyor.com/project/coezbek/switcheroo)
 ==========
 
-Switcheroo is Alt-Tab replacement for Windows.
+Switcheroo++ is Alt-Tab replacement for Windows.
 
-The idea of this fork of to present windows in a column format: the most recent windows in the center column, the most common applications to the left, and pinned windows to the right.
+The idea of this project of to present windows in a column format: the most recent windows in the center column, the most common applications to the left, and pinned windows to the right.
+
+Switcheroo++ is a fork of [Regin Larsen's Switcheroo](https://github.com/kvakulo/Switcheroo).
 
 ## Screenshot
 
 <img src="screenshot.png" alt="Screenshot of Switcheroo in action" width="540px" height="372px">
 
-
 ## Download
 
 **[Download Switcheroo here](https://github.com/coezbek/Switcheroo/releases)**
-
 
 ## Usage
 
@@ -120,22 +120,19 @@ Relative to [@kvakulo kvakulo / Switcheroo](https://github.com/kvakulo/Switchero
 
 ## History
 
-Switcheroo was originally developed by [James Sulak](https://github.com/jsulak).
+Switcheroo was originally developed by [James Sulak](https://github.com/jsulak). [Regin Larsen](https://github.com/kvakulo) took over the project in 2014.
 
-[Regin Larsen](https://github.com/kvakulo) took over the project in 2014 and is the current maintainer.
-
-This fork is maintained by [Christopher Özbek](https://github.com/coezbek).
+Switcheroo++ is maintained by [Christopher Özbek](https://github.com/coezbek).
 
 ## Other projects
 
-- [Alt-Tab Terminator]() - Commercial alt-tab replacement with window previews.
-- https://github.com/hdlx/AltAppSwitcher - If you want Alt+Tab to be like MacOS's app switcher.
+- [Alt-Tab Terminator](https://www.ntwind.com/software/alttabter.html) - Commercial alt-tab replacement with window previews.
+- [https://github.com/hdlx/AltAppSwitcher](https://github.com/hdlx/AltAppSwitcher) - If you want Alt+Tab to be like MacOS's app switcher.
 
 
-How to contribute
------------------
+## How to contribute
 
-Please report any bug you encounter by [submitting an issue](https://github.com/kvakulo/Switcheroo/issues/new).
+Please report any bug you encounter by [submitting an issue](https://github.com/coezbek/Switcheroo/issues/new).
 
 If you have an idea how to improve Switcheroo, then don't be shy to submit it as well.
 
