@@ -1,4 +1,4 @@
-<img src="logo.png" alt="Switcheroo" width="48px" height="48px"> Switcheroo++ [![Build Status](https://img.shields.io/appveyor/ci/coezbek/switcheroo.svg)](https://ci.appveyor.com/project/coezbek/switcheroo)
+<img src="logo.png" alt="Switcheroo" width="48px" height="48px"> Switcheroo++ [![Build and Release](https://github.com/coezbek/Switcheroo/actions/workflows/release.yml/badge.svg)](https://github.com/coezbek/Switcheroo/actions/workflows/release.yml)
 ==========
 
 Switcheroo++ is Alt-Tab replacement for Windows.
@@ -180,4 +180,5 @@ Switcheroo makes use of these great open source projects:
 
 * [Managed Windows API](http://mwinapi.sourceforge.net), Copyright © 2006 Michael Schier, GNU Lesser General Public License (LGPL)
 * [PortableSettingsProvider](https://github.com/crdx/PortableSettingsProvider), Copyright © crdx, The MIT License (MIT)
+
 
