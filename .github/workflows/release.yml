@@ -88,10 +88,19 @@ jobs:
       - name: Build Installers
         run: msbuild Installer\Build.xml /t:Main /p:Configuration=Release /p:Platform="AnyCPU"
 
-      - name: Build changelog from conventional commits
-        id: changelog
+      - name: Build changelog from conventional commits for tagged release
+        id: changelog_tag
         uses: requarks/changelog-action@v1
-        # if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          token: ${{ github.token }}
+          tag: ${{ github.ref_name }}
+          writeToFile: false
+
+      - name: Build changelog from conventional commits for draft release
+        id: changelog_draft
+        uses: requarks/changelog-action@v1
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         with:
           token: ${{ github.token }}
           fromTag: ${{ github.sha }}
