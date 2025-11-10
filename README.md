@@ -9,7 +9,7 @@ Switcheroo++ is a fork of [Regin Larsen's Switcheroo](https://github.com/kvakulo
 
 ## Screenshot
 
-<img src="screenshot.png" alt="Screenshot of Switcheroo in action" width="540px" height="372px">
+<img src="screenshot.png" alt="Screenshot of Switcheroo in action" width="1500px" height="477px">
 
 ## Download
 
@@ -180,3 +180,4 @@ Switcheroo makes use of these great open source projects:
 
 * [Managed Windows API](http://mwinapi.sourceforge.net), Copyright © 2006 Michael Schier, GNU Lesser General Public License (LGPL)
 * [PortableSettingsProvider](https://github.com/crdx/PortableSettingsProvider), Copyright © crdx, The MIT License (MIT)
+
