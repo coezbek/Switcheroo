@@ -3,10 +3,10 @@ name: Build and Release
 on:
   push:
     branches:
-      - main  # Draft releases on regular pushes
+      - main # Draft releases on regular pushes
     tags: # Published releases on version tags
-      - v[0-9]+.[0-9]+.[0-9]+
-  workflow_dispatch:  # Allows manual triggering from GitHub UI
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch: # Allows manual triggering from GitHub UI
 
 jobs:
   build-and-release:
@@ -15,6 +15,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
@@ -24,30 +27,55 @@ jobs:
 
       - name: Restore NuGet packages
         run: nuget restore Switcheroo.sln
-      
-      - name: Determine release type and version
-        id: release-info
-        run: |
-          if ("${{ github.ref }}" -match "^refs/tags/v") {
-            # This is a version tag - create published release from version tag name
-            $isDraft = "false"
-            $version = "${{ github.ref_name }}"
-            $releaseName = "Release $version"
-          } else {
-            # This is a regular push or manual trigger - create draft release
-            $isDraft = "true"
-            $timestamp = Get-Date -Format "yyyy.MM.dd.HHmmss"
-            $version = "dev-$timestamp"
-            $releaseName = "Draft Build - $timestamp"
-          }
-          echo "IS_DRAFT=$isDraft" >> $env:GITHUB_ENV
-          echo "VERSION=$version" >> $env:GITHUB_ENV
-          echo "RELEASE_NAME=$releaseName" >> $env:GITHUB_ENV
-        shell: pwsh
 
+      - name: Determine version
+        id: ver
+        run: |
+          git fetch --tags --force
+          $lastTag = (& git tag -l "v*" --sort=-v:refname | Select-Object -First 1)
+          if ([string]::IsNullOrWhiteSpace($lastTag)) { $lastTag = "v9.3.0" }
+
+          if ("${{ github.ref }}" -match "^refs/tags/v") {
+            # Official release from tag (e.g., v9.4.0)
+            $base = "${{ github.ref_name }}".TrimStart('v') -replace '-.*','' -replace '\+.*',''
+            $parts = $base.Split('.'); while ($parts.Count -lt 3) { $parts += '0' }
+            $maj=[int]$parts[0]; $min=[int]$parts[1]; $pat=[int]$parts[2]
+
+            $run="${{ github.run_number }}"
+
+            $VERSION      = "v$maj.$min.$pat.$run"
+            $ASM_VERSION  = "$maj.$min.$pat.$run"                         # numeric only
+            $IS_DRAFT     = "false"
+            $RELEASE_NAME = "Release $VERSION"
+          }
+          else {
+            # Dev build: next MINOR, PATCH=0, revision = run number
+            $norm = $lastTag.TrimStart('v') -replace '-.*','' -replace '\+.*',''
+            $p = $norm.Split('.'); while ($p.Count -lt 3) { $p += '0' }
+            $maj=[int]$p[0]; $min=[int]$p[1]; $pat=[int]$p[2]
+
+            $maj2=$maj; $min2=$min+1; $pat2=0
+            $run="${{ github.run_number }}"
+            $shaShort = "${{ github.sha }}".Substring(0,7)
+
+            $VERSION     = "v$maj2.$min2.$pat2.$run"                   # v9.4.0.123
+            $ASM_VERSION = "$maj2.$min2.$pat2.$run"                    # 9.4.0.123
+            $IS_DRAFT    = "true"
+            $RELEASE_NAME = "Draft Build - v$maj2.$min2.$pat2-dev.$run+sha.$shaShort"
+
+            # Create a temp tag:
+            git tag -f "$VERSION" ${{ github.sha }}
+          }
+          "VERSION=$VERSION"           | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          "ASM_VERSION=$ASM_VERSION"   | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          "IS_DRAFT=$IS_DRAFT"         | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          "RELEASE_NAME=$RELEASE_NAME" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          "LAST_TAG=$lastTag"          | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+        shell: pwsh
+      
       - name: Update AssemblyInfo # Ensure that generated releases have correct version numbers
         run: |
-          $version = "${{ env.VERSION }}".replace('v', '') # Remove 'v' prefix if present
+          $version = "${{ env.ASM_VERSION }}"
           $files = Get-ChildItem -Path . -Filter "AssemblyInfo.cs" -Recurse
           foreach ($file in $files) {
             (Get-Content $file.FullName) |
@@ -58,38 +86,41 @@ jobs:
         shell: pwsh
 
       - name: Build Installers
-        run: msbuild Installer\Build.xml /t:Main /p:Configuration=Release /p:Platform="Any CPU"
-
-      - name: Package release files
-        run: |
-          $version = "${{ env.VERSION }}"
-          # The installer script places output in the "Output" directory.
-          # We will zip this entire directory for the release.
-          $outputDir = "Installer\Output" 
-          $outputZip = "Switcheroo-installers-$version.zip"
-          Compress-Archive -Path "$outputDir\*" -DestinationPath $outputZip
-          echo "RELEASE_ZIP=$outputZip" >> $env:GITHUB_ENV
-        shell: pwsh
-
-      - name: Build solution
-        run: msbuild Switcheroo.sln /p:Configuration=Release /p:Platform="Any CPU"
-
-      - name: Package release files
-        run: |
-          $releaseDir = "Switcheroo\bin\Release"
-          $version = "${{ env.VERSION }}"
-          $outputZip = "Switcheroo-$version.zip"
-          Compress-Archive -Path "$releaseDir\*" -DestinationPath $outputZip
-          echo "RELEASE_ZIP=$outputZip" >> $env:GITHUB_ENV
-        shell: pwsh
+        run: msbuild Installer\Build.xml /t:Main /p:Configuration=Release /p:Platform="AnyCPU"
 
       - name: Build changelog from conventional commits
         id: changelog
         uses: requarks/changelog-action@v1
+        # if: startsWith(github.ref, 'refs/tags/')
         with:
           token: ${{ github.token }}
-          tag: ${{ env.VERSION }}
+          fromTag: ${{ github.sha }}
+          toTag: ${{ env.LAST_TAG }}
           writeToFile: false
+
+      - name: Rename artifacts with version
+        shell: pwsh
+        run: |
+          $ver = "${{ env.ASM_VERSION }}"
+          $out = "Installer/Output"
+
+          $instSrc = Join-Path $out "switcheroo-setup.exe"
+          $portSrc = Join-Path $out "switcheroo-portable.zip"
+
+          if (!(Test-Path $instSrc)) { throw "Missing $instSrc" }
+          if (!(Test-Path $portSrc)) { throw "Missing $portSrc" }
+
+          $instDst = Join-Path $out ("Switcheroo-Installer-{0}.exe" -f $ver)
+          $portDst = Join-Path $out ("Switcheroo-Portable-{0}.zip" -f $ver)
+
+          Move-Item -Force $instSrc $instDst
+          Move-Item -Force $portSrc $portDst
+
+          $instDst = $instDst -replace '\\','/'
+          $portDst = $portDst -replace '\\','/'
+
+          "INSTALLER_PATH=$instDst" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          "PORTABLE_PATH=$portDst"  | Out-File $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -97,7 +128,9 @@ jobs:
           tag_name: ${{ env.VERSION }}
           target_commitish: ${{ github.sha }}
           draft: ${{ env.IS_DRAFT == 'true' }}
-          files: ${{ env.RELEASE_ZIP }}
+          files: |
+            ${{ env.INSTALLER_PATH }}
+            ${{ env.PORTABLE_PATH }}
           fail_on_unmatched_files: true
           generate_release_notes: false
           name: ${{ env.RELEASE_NAME }}
