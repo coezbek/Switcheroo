@@ -65,6 +65,7 @@ Switcheroo displays windows in five columns:
 - [x] Add Right Shift key support in shift key checks - from fork georgeyu/Switcheroo
 - [x] New screenshot
 - [x] Fix: Empty Shortcut will use Backspace as the shortcut - https://github.com/kvakulo/Switcheroo/issues/172
+- [x] Feat: Support for middle click to close windows - https://github.com/kvakulo/Switcheroo/issues/166  
 
 ## Forks
 

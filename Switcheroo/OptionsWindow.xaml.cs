@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Switcheroo - The incremental-search task switcher for Windows.
  * https://github.com/coezbek/switcheroo
  * Copyright 2009, 2010 James Sulak
@@ -67,6 +67,7 @@ namespace Switcheroo
             AutoSwitch.IsChecked = Settings.Default.AutoSwitch;
             AutoSwitch.IsEnabled = Settings.Default.AltTabHook;
             SwitchOnSingleClickCheckBox.IsChecked = Settings.Default.SwitchOnSingleClick;
+            MiddleClickActionComboBox.SelectedIndex = Settings.Default.MiddleClickAction;
             RunAsAdministrator.IsChecked = Settings.Default.RunAsAdmin;
             ColumnWidth.Text = Settings.Default.UserWidth.ToString();
         }
@@ -119,6 +120,7 @@ namespace Switcheroo
             Settings.Default.AltTabHook = AltTabCheckBox.IsChecked.GetValueOrDefault();
             Settings.Default.AutoSwitch = AutoSwitch.IsChecked.GetValueOrDefault();
             Settings.Default.SwitchOnSingleClick = SwitchOnSingleClickCheckBox.IsChecked.GetValueOrDefault();
+            Settings.Default.MiddleClickAction = MiddleClickActionComboBox.SelectedIndex;
             Settings.Default.RunAsAdmin = RunAsAdministrator.IsChecked.GetValueOrDefault();
             double columnWidth;
             if (double.TryParse(ColumnWidth.Text, out columnWidth))

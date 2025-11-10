@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Switcheroo - The incremental-search task switcher for Windows.
  * https://github.com/coezbek/switcheroo
  * Copyright 2009, 2010 James Sulak
@@ -881,6 +881,50 @@ namespace Switcheroo
                     Switch();
                     e.Handled = true;
                 }
+            }
+        }
+
+        private async void ListBoxItem_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.MiddleButton == MouseButtonState.Pressed)
+            {
+                var middleClickAction = Settings.Default.MiddleClickAction;
+
+                // 0 = Do nothing, 1 = Close item under cursor, 2 = Close highlighted item
+                if (middleClickAction == 0)
+                {
+                    return; // Do nothing
+                }
+
+                AppWindowViewModel win = null;
+
+                if (middleClickAction == 1)
+                {
+                    // Close the item under the mouse cursor
+                    var listBoxItem = sender as System.Windows.Controls.ListBoxItem;
+                    if (listBoxItem != null)
+                    {
+                        win = listBoxItem.Content as AppWindowViewModel;
+                    }
+                }
+                else if (middleClickAction == 2)
+                {
+                    // Close the currently SELECTED/highlighted window
+                    var currentListBox = _listBoxes[_activeColumnIndex];
+                    win = currentListBox.SelectedItem as AppWindowViewModel;
+                }
+
+                if (win != null)
+                {
+                    bool isClosed = await _windowCloser.TryCloseAsync(win);
+                    if (isClosed)
+                        RemoveWindowFromAllLists(win);
+
+                    if (_unfilteredWindowList.Count == 0)
+                        HideWindow();
+                }
+
+                e.Handled = true; // Prevent selecting the item under cursor
             }
         }
 

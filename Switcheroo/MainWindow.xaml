@@ -1,4 +1,4 @@
-﻿<Window x:Class="Switcheroo.MainWindow" WindowStartupLocation="Manual" Topmost="True"
+<Window x:Class="Switcheroo.MainWindow" WindowStartupLocation="Manual" Topmost="True"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:Switcheroo"
@@ -197,6 +197,7 @@
                         <Setter Property="Padding" Value="0,5" />
                         <EventSetter Event="MouseDoubleClick" Handler="ListBoxItem_MouseDoubleClick" />
                         <EventSetter Event="PreviewMouseLeftButtonUp" Handler="ListBoxItem_PreviewMouseLeftButtonUp" />
+                        <EventSetter Event="PreviewMouseDown" Handler="ListBoxItem_PreviewMouseDown" />
                     </Style>
                     <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="{x:Static SystemColors.HighlightColor}" Opacity=".4" />
                 </Grid.Resources>

@@ -1,4 +1,4 @@
-﻿<Window x:Class="Switcheroo.OptionsWindow"
+<Window x:Class="Switcheroo.OptionsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Switcheroo Options" ResizeMode="NoResize" SizeToContent="WidthAndHeight"
@@ -32,6 +32,15 @@
             <CheckBox Name="SwitchOnSingleClickCheckBox" Margin="5,5,5,1">Switch window on single click</CheckBox>
             <TextBlock Margin="25,0,5,10" FontSize="10" Foreground="DimGray" TextWrapping="Wrap">
                 If unchecked, you will need to double-click to switch to a window.
+            </TextBlock>
+            <TextBlock Margin="5,5,5,1">Middle-click action:</TextBlock>
+            <ComboBox Name="MiddleClickActionComboBox" Margin="25,5,0,5" Width="200" HorizontalAlignment="Left">
+                <ComboBoxItem Content="Do nothing" Tag="0"/>
+                <ComboBoxItem Content="Close item under mouse cursor" Tag="1"/>
+                <ComboBoxItem Content="Close highlighted item" Tag="2"/>
+            </ComboBox>
+            <TextBlock Margin="25,0,5,10" FontSize="10" Foreground="DimGray" TextWrapping="Wrap">
+                Configure what happens when you middle-click on a window item.
             </TextBlock>
             <CheckBox x:Name="RunAsAdministrator" Margin="5,5,5,1" Content="Run as Administrator *"/>
             <TextBlock Margin="25,0,5,10" FontSize="10" Foreground="DimGray" TextWrapping="Wrap">
