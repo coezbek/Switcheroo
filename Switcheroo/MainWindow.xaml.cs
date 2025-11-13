@@ -61,6 +61,8 @@ namespace Switcheroo
         public static readonly RoutedUICommand ScrollListUpCommand = new RoutedUICommand();
         public static readonly RoutedUICommand DismissCommand = new RoutedUICommand();
         public static readonly RoutedUICommand CloseColumnCommand = new RoutedUICommand();
+        public static readonly RoutedUICommand StartExplorerCommand = new RoutedUICommand();
+        public static readonly RoutedUICommand StartNewInstanceCommand = new RoutedUICommand();
         private OptionsWindow _optionsWindow;
         private AboutWindow _aboutWindow;
         private AltTabHook _altTabHook;
@@ -1081,10 +1083,62 @@ namespace Switcheroo
             ScrollSelectedItemIntoView();
         }
 
-        
+
         private void DismissWindow(object sender, ExecutedRoutedEventArgs e)
         {
             HideWindow();
+            e.Handled = true;
+        }
+
+        /// <summary>
+        /// Event handler for the StartExplorer command (Alt+E).
+        /// Starts a new Windows Explorer instance.
+        /// </summary>
+        private void StartExplorer(object sender, ExecutedRoutedEventArgs e)
+        {
+            try
+            {
+                Process.Start("explorer.exe");
+                HideWindow();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to start Windows Explorer: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            e.Handled = true;
+        }
+
+        /// <summary>
+        /// Event handler for the StartNewInstance command (Alt+N).
+        /// Starts a new instance of the currently selected process.
+        /// </summary>
+        private void StartNewInstance(object sender, ExecutedRoutedEventArgs e)
+        {
+            var currentListBox = _listBoxes[_activeColumnIndex];
+            if (currentListBox.SelectedItem == null)
+            {
+                e.Handled = true;
+                return;
+            }
+
+            var selectedWindow = (AppWindowViewModel)currentListBox.SelectedItem;
+            try
+            {
+                var executablePath = selectedWindow.AppWindow.ExecutablePath;
+                if (!string.IsNullOrEmpty(executablePath) && File.Exists(executablePath))
+                {
+                    Process.Start(executablePath);
+                    HideWindow();
+                }
+                else
+                {
+                    MessageBox.Show($"Unable to find executable path for {selectedWindow.ProcessTitle}", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to start new instance of {selectedWindow.ProcessTitle}: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
             e.Handled = true;
         }
 

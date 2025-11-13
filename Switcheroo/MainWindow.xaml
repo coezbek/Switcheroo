@@ -24,6 +24,10 @@
                         Executed="ScrollListDown" />
         <CommandBinding Command="local:MainWindow.DismissCommand"
                         Executed="DismissWindow" />
+        <CommandBinding Command="local:MainWindow.StartExplorerCommand"
+                        Executed="StartExplorer" />
+        <CommandBinding Command="local:MainWindow.StartNewInstanceCommand"
+                        Executed="StartNewInstance" />
     </Window.CommandBindings>
 
     <Window.InputBindings>
@@ -40,6 +44,8 @@
         <KeyBinding Command="local:MainWindow.ScrollListDownCommand" Key="Down" Modifiers="Alt" />
         <KeyBinding Command="local:MainWindow.DismissCommand" Key="Q" Modifiers="Alt" />
         <KeyBinding Command="local:MainWindow.DismissCommand" Key="Escape" />
+        <KeyBinding Command="local:MainWindow.StartExplorerCommand" Key="E" Modifiers="Alt" />
+        <KeyBinding Command="local:MainWindow.StartNewInstanceCommand" Key="N" Modifiers="Alt" />
     </Window.InputBindings>
 
     <Window.Resources>

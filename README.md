@@ -22,6 +22,7 @@ Action                         | Shortcut          | Remarks
 Activate Switcheroo            | `Alt + Space`     | This shortcut can be customized in _Options_
 Activate Switcheroo            | `Alt + Tab`       | Only works if enabled under _Options_
 _When Switcheroo is open_      |                   |
+Enter search mode              | `Alt + S`         |
 Switch to selected window      | `Enter`           | Or release `Alt` if opened with `Alt + Tab` and `_altTabAutoSwitch` is enabled in _Options_. Note: independently from `_altTabAutoSwitch`, pressing and release `Alt` will select the currently highlighted window and switch to it.
 Close selected window          | `Alt or Ctrl + W` |
 Dismiss Switcheroo             | `Esc or Alt + Q`  |
@@ -29,6 +30,8 @@ Up and down in list            | `Up` / `Down`     | Also works with `Alt + J` /
 Navigate columns               | `Left` / `Right`  | Also works when holding `Alt`. `Alt+Shift+Wheel` to scroll columns.
 Cycle most common apps         | `Alt + ~`         |
 Keep Switcheroo open           | `Ctrl`            | Hold while releasing `Alt` to keep Switcheroo open if in `_altTabAutoSwitch` mode.
+Launch Explorer                | `Alt + E`         | Opens a new File Explorer window.
+Launch current process         | `Alt + N`         | Launches a new instance of the currently selected window's process.
 
 ### Mouse Usage
 
@@ -72,6 +75,7 @@ Switcheroo displays windows in five columns:
 - [x] Feat: Support for middle click to close windows - https://github.com/kvakulo/Switcheroo/issues/166
 - [ ] Dark mode/theme support.
 - [ ] Build of tagged releases doesn't properly show the changelog in the release notes.
+- [x] Add Alt+E shortcut to open a new explorer window.
 
 ## Forks
 
