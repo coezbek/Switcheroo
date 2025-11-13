@@ -61,10 +61,10 @@ Switcheroo displays windows in five columns:
 - [x] After pressing Alt+W the focus must be moved to the next item in the list.
 - [x] Make it user configurable if single or double click is needed to switch to a window.
 - [x] Holding Ctrl while releasing Alt in `_altTabAutoSwitch` mode keeps Switcheroo open.
-- [ ] Make pinned windows configurable from the UI / Settings.
+- [x] Make pinned windows configurable from the UI.
 - [ ] Allow to highlight some of the windows based on regex rules.
 - [x] For left/app columns allow Alt+Shift+W to close all windows in that column.
-- [ ] Add right click menu to windows for "Close", "Pin/Unpin", "Bring to front", "Open File Location", "Copy Window Title".
+- [x] Add right click menu to windows for "Close", "Pin/Unpin", "Switch", "Open File Location", "Copy Window Title".
   - [ ] Tagging windows - https://github.com/kvakulo/Switcheroo/issues/174
   - [ ] Assign shortcut - https://github.com/elig0n/Switcheroo/issues/30
 - [x] Add Right Shift key support in shift key checks - from fork georgeyu/Switcheroo

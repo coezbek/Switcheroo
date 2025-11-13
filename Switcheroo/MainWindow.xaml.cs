@@ -913,6 +913,46 @@ namespace Switcheroo
             }
         }
 
+        private void ListBoxItem_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            var listBoxItem = sender as System.Windows.Controls.ListBoxItem;
+            if (listBoxItem?.Content is AppWindowViewModel window)
+            {
+                var contextMenu = listBoxItem.ContextMenu;
+                if (contextMenu != null)
+                {
+                    // Find the Pin/Unpin menu item
+                    foreach (var item in contextMenu.Items)
+                    {
+                        if (item is System.Windows.Controls.MenuItem menuItem &&
+                            menuItem.Tag != null && menuItem.Tag.ToString() == "PinUnpin")
+                        {
+                            bool isPinned = IsProcessPinned(window.ProcessTitle);
+                            menuItem.Header = isPinned ? "Unpin" : "Pin";
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        private bool IsProcessPinned(string processTitle)
+        {
+            if (Settings.Default.PinnedProcesses == null)
+                return false;
+
+            var processLower = processTitle.ToLowerInvariant();
+            foreach (string pinnedProcess in Settings.Default.PinnedProcesses)
+            {
+                if (!string.IsNullOrWhiteSpace(pinnedProcess) &&
+                    pinnedProcess.Trim().ToLowerInvariant() == processLower)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         private async void ListBoxItem_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.MiddleButton == MouseButtonState.Pressed)
@@ -1369,6 +1409,129 @@ namespace Switcheroo
 
             shortcutText.Append(keyString);
             return shortcutText.ToString();
+        }
+
+        private void ContextMenu_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            var contextMenu = sender as System.Windows.Controls.ContextMenu;
+            if (contextMenu != null)
+            {
+                // Close the context menu and let the event bubble to the main window
+                // where the existing keyboard handlers will process it
+                contextMenu.IsOpen = false;
+                e.Handled = false; // Let it bubble
+            }
+        }
+
+        private void ContextMenu_Switch(object sender, RoutedEventArgs e)
+        {
+            var menuItem = sender as System.Windows.Controls.MenuItem;
+            if (menuItem?.DataContext is AppWindowViewModel window)
+            {
+                window.AppWindow.SwitchToLastVisibleActivePopup();
+                HideWindow();
+            }
+        }
+
+        private async void ContextMenu_Close(object sender, RoutedEventArgs e)
+        {
+            var menuItem = sender as System.Windows.Controls.MenuItem;
+            if (menuItem?.DataContext is AppWindowViewModel window)
+            {
+                bool isClosed = await _windowCloser.TryCloseAsync(window);
+                if (isClosed)
+                {
+                    RemoveWindowFromAllLists(window);
+                }
+
+                if (_unfilteredWindowList.Count == 0)
+                {
+                    HideWindow();
+                }
+            }
+        }
+
+        private void ContextMenu_PinUnpin(object sender, RoutedEventArgs e)
+        {
+            var menuItem = sender as System.Windows.Controls.MenuItem;
+            if (menuItem?.DataContext is AppWindowViewModel window)
+            {
+                string processTitle = window.ProcessTitle.Trim().ToLowerInvariant();
+                bool isPinned = IsProcessPinned(window.ProcessTitle);
+
+                if (Settings.Default.PinnedProcesses == null)
+                {
+                    Settings.Default.PinnedProcesses = new System.Collections.Specialized.StringCollection();
+                }
+
+                if (isPinned)
+                {
+                    // Unpin: Remove from the collection
+                    var itemsToRemove = new List<string>();
+                    foreach (string pinnedProcess in Settings.Default.PinnedProcesses)
+                    {
+                        if (!string.IsNullOrWhiteSpace(pinnedProcess) &&
+                            pinnedProcess.Trim().ToLowerInvariant() == processTitle)
+                        {
+                            itemsToRemove.Add(pinnedProcess);
+                        }
+                    }
+                    foreach (var item in itemsToRemove)
+                    {
+                        Settings.Default.PinnedProcesses.Remove(item);
+                    }
+                }
+                else
+                {
+                    // Pin: Add to the collection
+                    Settings.Default.PinnedProcesses.Add(processTitle);
+                }
+
+                Settings.Default.Save();
+
+                // Reload the data to reflect the changes
+                LoadData(InitialFocus.NextItem);
+            }
+        }
+
+        private void ContextMenu_CopyWindowTitle(object sender, RoutedEventArgs e)
+        {
+            var menuItem = sender as System.Windows.Controls.MenuItem;
+            if (menuItem?.DataContext is AppWindowViewModel window)
+            {
+                try
+                {
+                    System.Windows.Clipboard.SetText(window.WindowTitle);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to copy to clipboard: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void ContextMenu_OpenFileLocation(object sender, RoutedEventArgs e)
+        {
+            var menuItem = sender as System.Windows.Controls.MenuItem;
+            if (menuItem?.DataContext is AppWindowViewModel window)
+            {
+                try
+                {
+                    string executablePath = window.AppWindow.ExecutablePath;
+                    if (!string.IsNullOrEmpty(executablePath) && File.Exists(executablePath))
+                    {
+                        Process.Start("explorer.exe", $"/select,\"{executablePath}\"");
+                    }
+                    else
+                    {
+                        MessageBox.Show("Unable to determine the executable path for this window.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to open file location: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
         }
 
         #endregion

@@ -199,12 +199,30 @@
                             </StackPanel>
                         </DockPanel>
                     </DataTemplate>
+
+                    <ContextMenu x:Key="ListBoxItemContextMenu" KeyDown="ContextMenu_KeyDown">
+                        <MenuItem Header="Switch" Click="ContextMenu_Switch" FontWeight="Bold" />
+                        <Separator />
+                        <MenuItem Header="Close" Click="ContextMenu_Close" />
+                        <MenuItem Header="Pin" Click="ContextMenu_PinUnpin" Tag="PinUnpin">
+                            <MenuItem.Icon>
+                                <TextBlock Text="&#xE718;" FontFamily="Segoe MDL2 Assets" FontSize="14" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator />
+                        <MenuItem Header="Copy Window Title" Click="ContextMenu_CopyWindowTitle" />
+                        <MenuItem Header="Open File Location" Click="ContextMenu_OpenFileLocation" />
+                    </ContextMenu>
+
                     <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource {x:Type ListBoxItem}}">
                         <Setter Property="Padding" Value="0,5" />
+                        <Setter Property="ContextMenu" Value="{StaticResource ListBoxItemContextMenu}" />
                         <EventSetter Event="MouseDoubleClick" Handler="ListBoxItem_MouseDoubleClick" />
                         <EventSetter Event="PreviewMouseLeftButtonUp" Handler="ListBoxItem_PreviewMouseLeftButtonUp" />
                         <EventSetter Event="PreviewMouseDown" Handler="ListBoxItem_PreviewMouseDown" />
+                        <EventSetter Event="ContextMenuOpening" Handler="ListBoxItem_ContextMenuOpening" />
                     </Style>
+
                     <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="{x:Static SystemColors.HighlightColor}" Opacity=".4" />
                 </Grid.Resources>
                 <Grid.ColumnDefinitions>
