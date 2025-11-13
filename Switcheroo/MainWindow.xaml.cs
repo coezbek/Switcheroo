@@ -421,8 +421,12 @@ namespace Switcheroo
                 first10Set.Add(window.HWnd);
             }
 
-            // We always keep the first 10 windows in the center column (no matter if they are already in left/right)
-            var remainingForCenter = _unfilteredWindowList.Where(w => first10Set.Contains(w.HWnd) || !handledHwnds.Contains(w.HWnd));
+            // We always keep a.) the first 10 windows in the center column (no matter if they are already in left/right) and b.) the window we tab away from
+            var remainingForCenter = _unfilteredWindowList.Where(
+                w => first10Set.Contains(w.HWnd) 
+                || !handledHwnds.Contains(w.HWnd)
+                || w == firstWindow
+            );
             var centerWindows = remainingForCenter.ToList();
             foreach (var window in centerWindows)
             {
