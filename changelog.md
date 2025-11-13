@@ -1,5 +1,13 @@
 Change log
 ----------
+
+### 2025-11-13: v0.9.4 ###
+
+- Context menus for windows: Close, Pin/Unpin, Switch, Open File Location, Copy Window Title.
+- Alt+E for starting a new explorer window.
+- Alt+N for starting another instance of the focused application.
+- Show toast notification when Switcheroo is started.
+
 ### 2025-11-10: v0.9.3 ###
 - Column-based re-design.
 - Added various short-cuts for navigation and window management.
