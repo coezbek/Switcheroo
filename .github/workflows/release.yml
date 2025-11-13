@@ -61,10 +61,10 @@ jobs:
             $VERSION     = "v$maj2.$min2.$pat2.$run"                   # v9.4.0.123
             $ASM_VERSION = "$maj2.$min2.$pat2.$run"                    # 9.4.0.123
             $IS_DRAFT    = "true"
-            $RELEASE_NAME = "Draft Build - v$maj2.$min2.$pat2-dev.$run+sha.$shaShort"
+            $RELEASE_NAME = "Draft Build - v$maj2.$min2.$pat2.$run+sha.$shaShort"
 
             # Create a temp tag:
-            git tag -f "$VERSION" ${{ github.sha }}
+            # git tag -f "$VERSION" ${{ github.sha }}
           }
           "VERSION=$VERSION"           | Out-File $env:GITHUB_ENV -Append -Encoding utf8
           "ASM_VERSION=$ASM_VERSION"   | Out-File $env:GITHUB_ENV -Append -Encoding utf8
@@ -134,7 +134,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.VERSION }}
+          # tag_name: ${{ env.VERSION }} # Use existing tag for official releases
           target_commitish: ${{ github.sha }}
           draft: ${{ env.IS_DRAFT == 'true' }}
           files: |
