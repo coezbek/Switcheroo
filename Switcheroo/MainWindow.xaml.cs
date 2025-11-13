@@ -367,8 +367,19 @@ namespace Switcheroo
             _listRight.Clear();
 
             var handledHwnds = new HashSet<IntPtr>();
-            
-            var pinnedProcesses = new HashSet<string> { "thunderbird", "outlook"};
+
+            var pinnedProcesses = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (Settings.Default.PinnedProcesses != null)
+            {
+                foreach (string process in Settings.Default.PinnedProcesses)
+                {
+                    if (!string.IsNullOrWhiteSpace(process))
+                    {
+                        pinnedProcesses.Add(process.Trim().ToLowerInvariant());
+                    }
+                }
+            }
+
             var rightWindows = _unfilteredWindowList
                 .Where(w => pinnedProcesses.Contains(w.ProcessTitle.ToLowerInvariant()))
                 .ToList();
