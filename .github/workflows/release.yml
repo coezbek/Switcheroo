@@ -143,6 +143,6 @@ jobs:
           fail_on_unmatched_files: true
           generate_release_notes: false
           name: ${{ env.RELEASE_NAME }}
-          body: ${{ steps.changelog.outputs.changes }}
+          body: ${{ steps.changelog_tag.outputs.changes }}${{ steps.changelog_draft.outputs.changes }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

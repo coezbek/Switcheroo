@@ -74,7 +74,7 @@ Switcheroo displays windows in five columns:
 - [x] Fix: Empty Shortcut will use Backspace as the shortcut - https://github.com/kvakulo/Switcheroo/issues/172
 - [x] Feat: Support for middle click to close windows - https://github.com/kvakulo/Switcheroo/issues/166
 - [ ] Dark mode/theme support.
-- [ ] Build of tagged releases doesn't properly show the changelog in the release notes.
+- [x] Build of tagged releases doesn't properly show the changelog in the release notes.
 - [x] Add Alt+E shortcut to open a new explorer window.
 
 ## Forks
