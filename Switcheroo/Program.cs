@@ -43,6 +43,11 @@ namespace Switcheroo
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool SetConsoleCtrlHandler(ConsoleCtrlDelegate HandlerRoutine, bool Add);
 
+        public const string AppId = "github.com.coezbek.switcheroo";
+
+        [DllImport("shell32.dll", SetLastError = true)]
+        private static extern void SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string AppID);
+
         private delegate bool ConsoleCtrlDelegate(CtrlTypes CtrlType);
 
         private enum CtrlTypes
@@ -100,6 +105,9 @@ namespace Switcheroo
 #endif
 
                     MigrateUserSettings();
+
+                    // Set the AppUserModelID for the process for proper taskbar grouping and toast notifications
+                    SetCurrentProcessExplicitAppUserModelID(AppId);
 
                     var app = new App();
                     var mainWindow = new MainWindow();

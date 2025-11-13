@@ -66,7 +66,7 @@ Switcheroo displays windows in five columns:
   - [ ] Assign shortcut - https://github.com/elig0n/Switcheroo/issues/30
 - [x] Add Right Shift key support in shift key checks - from fork georgeyu/Switcheroo
 - [x] New screenshot
-- [ ] Show message bubble when Switcheroo has started.
+- [x] Show message bubble when Switcheroo has started.
 - [ ] Add option to disable stand-alone `ALT` keypress to switch to selected window. Currently this is enabled by default, but a bit surprising (see: https://github.com/kvakulo/Switcheroo/pull/128)
 - [x] Fix: Empty Shortcut will use Backspace as the shortcut - https://github.com/kvakulo/Switcheroo/issues/172
 - [x] Feat: Support for middle click to close windows - https://github.com/kvakulo/Switcheroo/issues/166

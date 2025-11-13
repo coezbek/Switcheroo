@@ -23,8 +23,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
+using System.IO;
 using System.Net;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -33,6 +35,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using ManagedWinapi;
 using ManagedWinapi.Windows;
+using Microsoft.Toolkit.Uwp.Notifications;
 using Switcheroo.Core;
 using Switcheroo.Core.Matchers;
 using Switcheroo.Properties;
@@ -101,7 +104,11 @@ namespace Switcheroo
 
             SetUpAltTabHook();
 
+            SetUpToastNotifications();
+
             CheckForUpdates();
+
+            ShowStartupNotification();
 
             Opacity = 0;
         }
@@ -255,6 +262,15 @@ namespace Switcheroo
                     new MenuItem("About", (s, e) => About()),
                     new MenuItem("Exit", (s, e) => Quit())
                 })
+            };
+        }
+
+        private void SetUpToastNotifications()
+        {
+            // Register the app for toast notifications with a unique AUMID
+            ToastNotificationManagerCompat.OnActivated += toastArgs =>
+            {
+                // Handle toast activation if needed (e.g., when user clicks the notification)
             };
         }
 
@@ -1149,6 +1165,145 @@ namespace Switcheroo
             var duration = new Duration(TimeSpan.FromSeconds(0.150));
             var newHeight = HelpPanel.Height > 0 ? 0 : +17;
             HelpPanel.BeginAnimation(HeightProperty, new DoubleAnimation(HelpPanel.Height, newHeight, duration));
+        }
+
+        private void ShowStartupNotification()
+        {
+            // Build a message based on configured hotkeys
+            var message = BuildActivationMessage();
+
+            if (!string.IsNullOrEmpty(message))
+            {
+                try
+                {
+                    // Get logo path from exe directory
+                    var exeDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                    var logoPath = Path.Combine(exeDirectory, "logo_toast.png");
+
+                    // Toast notifications don't work with network/UNC paths
+                    // Check if we're running from a network path and copy to temp if needed
+                    var logoUri = new Uri(logoPath);
+                    if (logoUri.IsUnc || !logoUri.IsFile)
+                    {
+                        // Running from network path, copy to local temp folder
+                        var tempLogoPath = Path.Combine(Path.GetTempPath(), "switcheroo_toast_logo.png");
+
+                        if (!File.Exists(tempLogoPath) && File.Exists(logoPath))
+                        {
+                            File.Copy(logoPath, tempLogoPath, overwrite: true);
+                        }
+
+                        logoPath = tempLogoPath;
+                    }
+
+                    // Build the toast notification
+                    var builder = new ToastContentBuilder()
+                        .AddText("Switcheroo++ Started")
+                        .AddText(message)
+                        .SetToastDuration(ToastDuration.Short);
+
+                    // Add the logo if it exists
+                    if (File.Exists(logoPath))
+                    {
+                        builder.AddAppLogoOverride(new Uri(logoPath), ToastGenericAppLogoCrop.Default);
+                    }
+
+                    // Show silently
+                    builder.AddAudio(new ToastAudio() { Silent = true });
+                    builder.Show();
+                }
+                catch (Exception ex)
+                {
+                    // Fallback to balloon tip if toast notifications fail
+                    Console.WriteLine($"Toast notification failed: {ex.Message}");
+                    _notifyIcon.BalloonTipTitle = "Switcheroo Started";
+                    _notifyIcon.BalloonTipText = message;
+                    _notifyIcon.BalloonTipIcon = System.Windows.Forms.ToolTipIcon.None;
+                    _notifyIcon.ShowBalloonTip(1000);
+                }
+            }
+        }
+
+        private string BuildActivationMessage()
+        {
+            var hasCustomHotkey = Settings.Default.EnableHotKey;
+            var hasAltTab = Settings.Default.AltTabHook;
+
+            if (!hasCustomHotkey && !hasAltTab)
+            {
+                return "No activation shortcuts configured. Use Options to configure.";
+            }
+
+            var parts = new List<string>();
+
+            if (hasAltTab)
+            {
+                parts.Add("Alt+Tab");
+            }
+
+            if (hasCustomHotkey)
+            {
+                var hotkeyString = FormatHotkey();
+                if (!string.IsNullOrEmpty(hotkeyString))
+                {
+                    parts.Add(hotkeyString);
+                }
+            }
+
+            if (parts.Count == 0)
+            {
+                return string.Empty;
+            }
+            else if (parts.Count == 1)
+            {
+                return $"Press {parts[0]} to activate";
+            }
+            else
+            {
+                return $"Press {string.Join(" or ", parts)} to activate";
+            }
+        }
+
+        private string FormatHotkey()
+        {
+            var shortcutText = new StringBuilder();
+
+            if (Settings.Default.Ctrl)
+            {
+                shortcutText.Append("Ctrl+");
+            }
+
+            if (Settings.Default.Shift)
+            {
+                shortcutText.Append("Shift+");
+            }
+
+            if (Settings.Default.Alt)
+            {
+                shortcutText.Append("Alt+");
+            }
+
+            if (Settings.Default.WindowsKey)
+            {
+                shortcutText.Append("Win+");
+            }
+
+            var keyCode = (System.Windows.Forms.Keys)Settings.Default.HotKey;
+            var keyString = KeyboardHelper.CodeToString((uint)keyCode).ToUpper().Trim();
+
+            if (string.IsNullOrEmpty(keyString))
+            {
+                keyString = new System.Windows.Forms.KeysConverter().ConvertToString(keyCode);
+            }
+
+            // Handle special case for Escape key
+            if (keyString == "\u001B")
+            {
+                keyString = "Escape";
+            }
+
+            shortcutText.Append(keyString);
+            return shortcutText.ToString();
         }
 
         #endregion
