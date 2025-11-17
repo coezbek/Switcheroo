@@ -50,8 +50,6 @@ Switcheroo displays windows in five columns:
 
 ## Todo List
 
-- [x] Multi-monitor support
-- [x] High DPI Fixes
 - [ ] Support for Virtual Desktops
 - [ ] Assign shortcut - https://github.com/elig0n/Switcheroo/issues/30
 - [ ] Tagging windows - https://github.com/kvakulo/Switcheroo/issues/174
@@ -60,6 +58,11 @@ Switcheroo displays windows in five columns:
 - [ ] Allow to highlight some of the windows based on regex rules.
 - [ ] Fix update checker
 - [ ] Proper logging/crash reporting
+
+## New Features in Version 0.9.5
+
+- [x] Multi-monitor support: Switcheroo will now appear on the monitor where the mouse cursor is located.
+- [x] High DPI Fixes: Switcheroo now properly scales on high DPI displays and shows high-resolution icons.
 
 ## New Features in Version 0.9.3 and 0.9.4
 
