@@ -74,7 +74,7 @@ namespace Switcheroo.Core
                 return null;
             }
 
-            Console.WriteLine($"[DEBUG] Cursor position: ({cursorPos.X}, {cursorPos.Y})");
+            // Console.WriteLine($"[DEBUG] Cursor position: ({cursorPos.X}, {cursorPos.Y})");
 
             IntPtr hMonitor = WinApi.MonitorFromPoint(cursorPos, WinApi.MonitorOptions.MONITOR_DEFAULTTONEAREST);
             if (hMonitor == IntPtr.Zero)

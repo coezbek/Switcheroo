@@ -26,6 +26,7 @@ using System.Linq;
 using System.IO;
 using System.Net;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -33,6 +34,8 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using System.Windows.Forms;
+using System.Windows.Interop;
 using ManagedWinapi;
 using ManagedWinapi.Windows;
 using Microsoft.Toolkit.Uwp.Notifications;
@@ -68,6 +71,7 @@ namespace Switcheroo
         private AltTabHook _altTabHook;
         private SystemWindow _foregroundWindow;
         private bool _altTabAutoSwitch;
+        private MonitorInfo _currentMonitor; // Cache the current monitor for reloads
 
         // New collections for each column
         private ObservableCollection<AppWindowViewModel> _listLeft1;
@@ -351,6 +355,24 @@ namespace Switcheroo
 
         private void LoadData(InitialFocus focus)
         {
+            // Use cached monitor if available, otherwise will fall back to primary screen
+            LoadData(focus, _currentMonitor);
+        }
+
+        private void LoadData(InitialFocus focus, MonitorInfo monitor)
+        {
+            // Cache the monitor for future reloads (when window is already visible)
+            if (monitor != null)
+            {
+                _currentMonitor = monitor;
+                // Console.WriteLine($"[DEBUG] LoadData: Caching monitor with DPI={monitor.DpiScale:F2}");
+            }
+            else
+            {
+                monitor = _currentMonitor;
+                // Console.WriteLine($"[DEBUG] LoadData: Using cached monitor with DPI={(monitor?.DpiScale.ToString("F2") ?? "null")}");
+            }
+            
             _unfilteredWindowList = new WindowFinder().GetWindows().Select(window => new AppWindowViewModel(window)).ToList();
             var firstWindow = _unfilteredWindowList.FirstOrDefault();
             bool foregroundWindowMovedToBottom = false;
@@ -448,7 +470,7 @@ namespace Switcheroo
 
             tb.Clear();
             tb.Focus();
-            CenterWindow();
+            CenterWindow(monitor);
             ScrollSelectedItemIntoView();
         }
 
@@ -497,81 +519,152 @@ namespace Switcheroo
         /// </summary>
         private void CenterWindow()
         {
-            double columnWidth = Math.Max(100, Settings.Default.UserWidth > 0 ? Settings.Default.UserWidth : 250);
+            CenterWindow(null);
+        }
 
-            // --- Part 1: Configure Layout ---
-            // Set column widths and visibility based on whether they contain items.
-            var numVisibleLeftColumns = 0;
-            if (_listLeft1.Any())
-            {
-                numVisibleLeftColumns++;
-                ColLeft1.Width = new GridLength(columnWidth);
-                ListBoxLeft1.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                ColLeft1.Width = new GridLength(0);
-                ListBoxLeft1.Visibility = Visibility.Collapsed;
-            }
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool SetWindowPos(
+            IntPtr hWnd,
+            IntPtr hWndInsertAfter,
+            int X,
+            int Y,
+            int cx,
+            int cy,
+            uint uFlags);
 
-            if (_listLeft2.Any())
+        private const uint SWP_NOZORDER = 0x0004;
+        private const uint SWP_NOACTIVATE = 0x0010;
+
+        /// <summary>
+        /// Configures the column layout, size, and position of the Switcheroo window on the specified monitor.
+        /// </summary>
+        private void CenterWindow(MonitorInfo monitor)
+        {
+            if (monitor == null)
             {
-                numVisibleLeftColumns++;
-                ColLeft2.Width = new GridLength(columnWidth);
-                ListBoxLeft2.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                ColLeft2.Width = new GridLength(0);
-                ListBoxLeft2.Visibility = Visibility.Collapsed;
+                throw new ArgumentNullException(nameof(monitor));
             }
 
-            if (_listLeft3.Any())
+            // Step 1: Ensure the window is physically on the correct monitor before any sizing.
+            // This forces the OS and WPF to use the target monitor's DPI for all subsequent layout calculations.
+            EnsureWindowIsOnCorrectMonitor(monitor);
+            
+            // Calculate the base column width, adjusted for the monitor's DPI scaling.
+            double baseColumnWidth = Settings.Default.UserWidth > 0 ? Settings.Default.UserWidth : 250;
+            double columnWidthInDips = Math.Max(100, baseColumnWidth / Math.Sqrt(monitor.DpiScale));
+
+            // Step 2: Configure the internal grid layout based on content.
+            int numVisibleColumns = ConfigureColumnLayout(columnWidthInDips);
+
+            // Step 3: Calculate the main window's overall size based on the layout.
+            CalculateAndSetWindowSize(numVisibleColumns, columnWidthInDips, monitor);
+
+            // Step 4: Calculate the final centered position for the correctly-sized window.
+            CalculateAndSetPosition(monitor);
+        }
+
+        /// <summary>
+        /// Moves the window to the target monitor based on raw pixel coordinates. After this call,
+        /// DPI-scaled coordinates will correctly target the right monitor.
+        /// </summary>
+        private void EnsureWindowIsOnCorrectMonitor(MonitorInfo monitor)
+        {
+            if (!IsVisible)
             {
-                numVisibleLeftColumns++;
-                ColLeft3.Width = new GridLength(columnWidth);
-                ListBoxLeft3.Visibility = Visibility.Visible;
+                var hwnd = new WindowInteropHelper(this).EnsureHandle();
+                SetWindowPos(hwnd, IntPtr.Zero, monitor.WorkArea.Left, monitor.WorkArea.Top, 100, 100, SWP_NOZORDER | SWP_NOACTIVATE);
             }
-            else
+        }
+
+        /// <summary>
+        /// Sets the visibility and width for each of the five columns in the grid based on whether their
+        /// corresponding ListBox contains items.
+        /// </summary>
+        /// <returns>The total number of visible columns.</returns>
+        private int ConfigureColumnLayout(double columnWidthInDips)
+        {
+            int visibleCount = 0;
+
+            // Local helper function to set the state of a single column, reducing repetition.
+            void SetColumnState(ColumnDefinition col, System.Windows.Controls.ListBox lb, bool isVisible)
             {
-                ColLeft3.Width = new GridLength(0);
-                ListBoxLeft3.Visibility = Visibility.Collapsed;
+                if (isVisible)
+                {
+                    col.Width = new GridLength(columnWidthInDips);
+                    lb.Visibility = Visibility.Visible;
+                    visibleCount++;
+                }
+                else
+                {
+                    col.Width = new GridLength(0);
+                    lb.Visibility = Visibility.Collapsed;
+                }
             }
 
-            // The center column is always conceptually present and given width.
-            ColCenter.Width = new GridLength(columnWidth);
-            ListBoxCenter.Visibility = Visibility.Visible;
+            SetColumnState(ColLeft1, ListBoxLeft1, _listLeft1.Any());
+            SetColumnState(ColLeft2, ListBoxLeft2, _listLeft2.Any());
+            SetColumnState(ColLeft3, ListBoxLeft3, _listLeft3.Any());
+            SetColumnState(ColCenter, ListBoxCenter, true); // Center column is always active.
+            SetColumnState(ColRight, ListBoxRight, _listRight.Any());
 
-            var numVisibleRightColumns = 0;
-            if (_listRight.Any())
+            return visibleCount;
+        }
+
+        /// <summary>
+        /// Calculates and sets the main window's Width and MaxHeight properties based on the number of
+        /// visible columns and the target monitor's work area.
+        /// </summary>
+        private void CalculateAndSetWindowSize(int numVisibleColumns, double columnWidthInDips, MonitorInfo monitor)
+        {
+            double calculatedWidthInDips = numVisibleColumns * columnWidthInDips;
+            double maxWidthInDips = monitor.WpfWorkAreaWidth * 0.95;
+
+            Width = Math.Min(calculatedWidthInDips, maxWidthInDips);
+            Border.MaxHeight = monitor.WpfWorkAreaHeight * 0.9;
+            MinWidth = 400;
+
+            // If the calculated width exceeds the final window width, switch to proportional ("star") sizing
+            // to ensure all visible columns fit within the constrained window size.
+            if (calculatedWidthInDips > Width)
             {
-                numVisibleRightColumns = 1;
-                ColRight.Width = new GridLength(columnWidth);
-                ListBoxRight.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                ColRight.Width = new GridLength(0);
-                ListBoxRight.Visibility = Visibility.Collapsed;
+                if (_listLeft1.Any()) ColLeft1.Width = new GridLength(1, GridUnitType.Star);
+                if (_listLeft2.Any()) ColLeft2.Width = new GridLength(1, GridUnitType.Star);
+                if (_listLeft3.Any()) ColLeft3.Width = new GridLength(1, GridUnitType.Star);
+                ColCenter.Width = new GridLength(1, GridUnitType.Star);
+                if (_listRight.Any()) ColRight.Width = new GridLength(1, GridUnitType.Star);
             }
 
-            // --- Part 2: Position Window ---
-            var numColumns = numVisibleLeftColumns + 1 + numVisibleRightColumns;
-            double screenWidth = SystemParameters.PrimaryScreenWidth;
-
-            // Set the correct final width & height
-            Width = Math.Min(numColumns * columnWidth, screenWidth * 0.95);
-            Border.MaxHeight = SystemParameters.PrimaryScreenHeight * 0.9;
-
-            // Force layout update to get correct ActualHeight for vertical centering.
+            // Force the layout to update so that ActualWidth and ActualHeight are correct for positioning.
             UpdateLayout();
+        }
 
-            // The anchor is the screen's center. We want the left side of our middle column to be offset from that.
-            var centerColumnLeftOffset = (numVisibleLeftColumns * columnWidth);
-            Left = Math.Max(0, (SystemParameters.PrimaryScreenWidth / 2.0) - centerColumnLeftOffset);
+        /// <summary>
+        /// Calculates the final Top and Left position of the window to center it on the target monitor.
+        /// This method should be called after the window's size has been set.
+        /// </summary>
+        private void CalculateAndSetPosition(MonitorInfo monitor)
+        {
+            // Convert the window's actual size from DIPs to physical pixels for accurate positioning.
+            double actualWidthInPixels = ActualWidth * monitor.DpiScale;
+            double actualHeightInPixels = ActualHeight * monitor.DpiScale;
 
-            // Try to top align the window to 256px top if sufficient space.
-            Top = Math.Min(256, (SystemParameters.PrimaryScreenHeight / 2.0) - (ActualHeight / 2.0));
+            // Calculate the horizontal center point in physical pixels.
+            double physicalCenterOfMonitorX = monitor.WorkArea.Left + (monitor.WorkAreaWidth / 2.0);
+            double desiredLeftInPixels = physicalCenterOfMonitorX - (actualWidthInPixels / 2.0);
+
+            // Ensure the window stays within the monitor's boundaries.
+            desiredLeftInPixels = Math.Max(monitor.WorkArea.Left, Math.Min(desiredLeftInPixels, monitor.WorkArea.Left + monitor.WorkAreaWidth - actualWidthInPixels));
+            
+            // Convert the final physical position back to DIPs for WPF.
+            Left = desiredLeftInPixels / monitor.DpiScale;
+
+            // Calculate the vertical position, preferring a 256px top margin but centering if necessary.
+            double desiredTopInPixels = Math.Min(
+                monitor.WorkArea.Top + 256, // Preferred top position
+                monitor.WorkArea.Top + (monitor.WorkAreaHeight / 2.0) - (actualHeightInPixels / 2.0) // Fallback to center
+            );
+
+            Top = desiredTopInPixels / monitor.DpiScale;
         }
 
         /// <summary>
@@ -601,6 +694,7 @@ namespace Switcheroo
             }
 
             _altTabAutoSwitch = false;
+            _currentMonitor = null; // Clear cached monitor so it's detected fresh next time
             Opacity = 0;
             Dispatcher.BeginInvoke(new Action(Hide), DispatcherPriority.Input);
         }
@@ -747,13 +841,18 @@ namespace Switcheroo
 
             if (Visibility != Visibility.Visible)
             {
-                tb.IsEnabled = true;
-
                 _foregroundWindow = SystemWindow.ForegroundWindow;
+
+                // Get the monitor where the mouse cursor is located
+                var cursorMonitor = MonitorHelper.GetMonitorFromCursor();
+                Console.WriteLine($"[DEBUG] hotkey_HotkeyPressed: Got monitor with DPI={(cursorMonitor?.DpiScale.ToString("F2") ?? "null")}");
+
+                LoadData(InitialFocus.NextItem, cursorMonitor);
+
+                tb.IsEnabled = true;
                 Show();
                 Activate();
                 Keyboard.Focus(tb);
-                LoadData(InitialFocus.NextItem);
                 Opacity = 1;
             }
             else
@@ -782,12 +881,15 @@ namespace Switcheroo
 
             if (Visibility != Visibility.Visible)
             {
+                // Get the monitor where the mouse cursor is located
+                var cursorMonitor = MonitorHelper.GetMonitorFromCursor();
+                // Console.WriteLine($"\n\n\n[DEBUG] AltTabPressed: Got monitor with DPI={(cursorMonitor?.DpiScale.ToString("F2") ?? "null")} and working area {cursorMonitor?.WorkArea}");
+                
+                LoadData(e.ShiftDown ? InitialFocus.PreviousItem : InitialFocus.NextItem, cursorMonitor);
+
                 tb.IsEnabled = true;
-
                 ActivateAndFocusMainWindow();
-
                 Keyboard.Focus(tb);
-                LoadData(e.ShiftDown ? InitialFocus.PreviousItem : InitialFocus.NextItem);
 
                 if (Settings.Default.AutoSwitch && !e.CtrlDown)
                 {

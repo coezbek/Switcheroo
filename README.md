@@ -48,7 +48,22 @@ Switcheroo displays windows in five columns:
 - The three columns to the left show windows from the three most common applications.
 - The rightmost column shows pinned windows (defined in _Options_).
 
-## TODO
+## Todo List
+
+- [x] Multi-monitor support
+- [x] High DPI Fixes
+- [ ] Support for Virtual Desktops
+- [ ] Assign shortcut - https://github.com/elig0n/Switcheroo/issues/30
+- [ ] Tagging windows - https://github.com/kvakulo/Switcheroo/issues/174
+- [ ] Add option to disable stand-alone `ALT` keypress to switch to selected window. Currently this is enabled by default, but a bit surprising (see: https://github.com/kvakulo/Switcheroo/pull/128)
+- [ ] Dark mode/theme support.
+- [ ] Allow to highlight some of the windows based on regex rules.
+- [ ] Fix update checker
+- [ ] Proper logging/crash reporting
+
+## New Features in Version 0.9.3 and 0.9.4
+
+- [x] UWP app support
 - [x] Ensure the 10 most recent windows remain in the center column, even if duplicated in other columns.
 - [x] Implement a fixed, identical width for all columns.
 - [x] Center the entire window so the middle column is perfectly centered on the screen.
