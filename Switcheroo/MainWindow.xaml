@@ -177,7 +177,7 @@
                                     </Style.Triggers>
                                 </Style>
                             </DockPanel.Resources>
-                            <Image DockPanel.Dock="Left" Height="19" Margin="3,0" Opacity="{Binding IsBeingClosed, Converter={StaticResource ImageOpacityConverter}, Mode=OneTime}">
+                            <Image DockPanel.Dock="Left" Height="32" Margin="3,0" Opacity="{Binding IsBeingClosed, Converter={StaticResource ImageOpacityConverter}, Mode=OneTime}">
                                 <Image.Source>
                                     <PriorityBinding>
                                         <Binding Path="HWnd" Converter="{StaticResource WindowHandleToIconConverter}" IsAsync="True" />
