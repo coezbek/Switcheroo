@@ -74,15 +74,16 @@ namespace Switcheroo
         private MonitorInfo _currentMonitor; // Cache the current monitor for reloads
 
         // New collections for each column
-        private ObservableCollection<AppWindowViewModel> _listLeft1;
-        private ObservableCollection<AppWindowViewModel> _listLeft2;
-        private ObservableCollection<AppWindowViewModel> _listLeft3;
-        private ObservableCollection<AppWindowViewModel> _listCenter;
-        private ObservableCollection<AppWindowViewModel> _listRight;
+        private readonly ObservableCollection<AppWindowViewModel> _listLeft1;
+        private readonly ObservableCollection<AppWindowViewModel> _listLeft2;
+        private readonly ObservableCollection<AppWindowViewModel> _listLeft3;
+        private readonly ObservableCollection<AppWindowViewModel> _listCenter;
+        private readonly ObservableCollection<AppWindowViewModel> _listRight;
 
         // For navigation
         private readonly List<System.Windows.Controls.ListBox> _listBoxes;
-        private int _activeColumnIndex = 3; // Center is the default
+        private List<System.Windows.Controls.ListBox> _visibleListBoxes;
+        private int _activeColumnIndex = 0;
 
         public MainWindow()
         {
@@ -95,6 +96,7 @@ namespace Switcheroo
             _listRight = new ObservableCollection<AppWindowViewModel>();
             
             _listBoxes = new List<System.Windows.Controls.ListBox> { ListBoxLeft1, ListBoxLeft2, ListBoxLeft3, ListBoxCenter, ListBoxRight };
+            _visibleListBoxes = new List<System.Windows.Controls.ListBox>();
 
             ListBoxLeft1.ItemsSource = _listLeft1;
             ListBoxLeft2.ItemsSource = _listLeft2;
@@ -229,9 +231,12 @@ namespace Switcheroo
                 var scrollUpLeft = _wheelRemainder > 0;
                 if (altShift)
                 {
-                    int count = _listBoxes.Count;
-                    int next = (_activeColumnIndex + (scrollUpLeft ? -1 : +1) + count) % count;
-                    SetActiveColumn(next);
+                    int count = _visibleListBoxes.Count;
+                    if (count > 0)
+                    {
+                        int next = (_activeColumnIndex + (scrollUpLeft ? -1 : +1) + count) % count;
+                        SetActiveColumn(next);
+                    }
                 }
                 else
                 {
@@ -418,22 +423,33 @@ namespace Switcheroo
                 .GroupBy(w => w.ProcessTitle)
                 .OrderByDescending(g => g.Count())
                 .ThenBy(g => g.Key)
-                .Take(3)
+                .Take(Settings.Default.NumberOfAppColumns)
                 .ToList();
 
+            var appColumnDataSources = new[] { _listLeft1, _listLeft2, _listLeft3 };
             var min_number_of_windows_for_own_column = 0;
+        
+            for (int i = 0; i < topApps.Count; i++)
+            {
+                var appGroup = topApps[i];
 
-            if (topApps.Count > 2 && topApps[2].ToList().Count >= min_number_of_windows_for_own_column)
-            {
-                foreach (var window in topApps[2]) { _listLeft1.Add(window); handledHwnds.Add(window.HWnd); }
-            }
-            if (topApps.Count > 1 && topApps[1].ToList().Count >= min_number_of_windows_for_own_column)
-            {
-                foreach (var window in topApps[1]) { _listLeft2.Add(window); handledHwnds.Add(window.HWnd); }
-            }
-            if (topApps.Count > 0 && topApps[0].ToList().Count >= min_number_of_windows_for_own_column)
-            {
-                foreach (var window in topApps[0]) { _listLeft3.Add(window); handledHwnds.Add(window.HWnd); }
+                // Only give an app its own column if it meets the minimum window count.
+                if (appGroup.Count() >= min_number_of_windows_for_own_column)
+                {
+                    // The most frequent app (topApps[0]) goes into the column closest to the center (ListBoxLeft3 -> _listLeft3).
+                    // The data source array is ordered left-to-right: [_listLeft1, _listLeft2, _listLeft3].
+                    // So, we map the most frequent group to the last index of the data source array.
+                    int targetListIndex = (appColumnDataSources.Length - 1) - i;
+                    if (targetListIndex >= 0)
+                    {
+                        var targetList = appColumnDataSources[targetListIndex];
+                        foreach (var window in appGroup)
+                        {
+                            targetList.Add(window);
+                            handledHwnds.Add(window.HWnd);
+                        }
+                    }
+                }
             }
 
             var first10Windows = _unfilteredWindowList.Take(10);
@@ -460,7 +476,8 @@ namespace Switcheroo
             // Set initial formatted titles for all windows
             TitleFormatter.FormatTitlesForDisplay(_unfilteredWindowList);
 
-            SetActiveColumn(3, focus);
+            int centerIndex = _listBoxes.IndexOf(ListBoxCenter);
+            SetActiveColumn(centerIndex, focus);
 
             // Correct the selection for the initial Shift+Alt+Tab after the active window has been moved to the end
             if (foregroundWindowMovedToBottom && focus == InitialFocus.PreviousItem)
@@ -481,15 +498,29 @@ namespace Switcheroo
         
         private void SetActiveColumn(int index, InitialFocus focus = InitialFocus.NextItem)
         {
-            if (index < 0 || index >= _listBoxes.Count) return;
+            var targetListBox = _listBoxes[index];
+            _visibleListBoxes.Clear();
+            _visibleListBoxes.AddRange(_listBoxes.Where(lb => lb.Visibility == Visibility.Visible));
+            int visibleIndex = _visibleListBoxes.IndexOf(targetListBox);
 
-            if (_activeColumnIndex >= 0 && _activeColumnIndex < _listBoxes.Count)
+            if (visibleIndex < 0)
             {
-                _listBoxes[_activeColumnIndex].Background = Brushes.Transparent;
+                // If the target column is not visible, default to the center column
+                targetListBox = ListBoxCenter;
+                visibleIndex = _visibleListBoxes.IndexOf(targetListBox);
+                if (visibleIndex < 0) // Fallback if center is somehow not visible
+                {
+                    visibleIndex = 0;
+                }
             }
 
-            _activeColumnIndex = index;
-            var currentListBox = _listBoxes[_activeColumnIndex];
+            if (_activeColumnIndex >= 0 && _activeColumnIndex < _visibleListBoxes.Count)
+            {
+                _visibleListBoxes[_activeColumnIndex].Background = Brushes.Transparent;
+            }
+
+            _activeColumnIndex = visibleIndex;
+            var currentListBox = _visibleListBoxes[_activeColumnIndex];
 
             currentListBox.Background = Brushes.AliceBlue;
 
@@ -583,29 +614,33 @@ namespace Switcheroo
         /// <returns>The total number of visible columns.</returns>
         private int ConfigureColumnLayout(double columnWidthInDips)
         {
-            int visibleCount = 0;
+            int numAppColumns = Settings.Default.NumberOfAppColumns;
 
-            // Local helper function to set the state of a single column, reducing repetition.
-            void SetColumnState(ColumnDefinition col, System.Windows.Controls.ListBox lb, bool isVisible)
+            var columnDefinitions = new[] { ColLeft1, ColLeft2, ColLeft3, ColCenter, ColRight };
+            var listBoxes = new[] { ListBoxLeft1, ListBoxLeft2, ListBoxLeft3, ListBoxCenter, ListBoxRight };
+
+            // Logic to determine if an app column should be visible
+            bool showLeft1 = numAppColumns >= 3 && _listLeft1.Any();
+            bool showLeft2 = numAppColumns >= 2 && _listLeft2.Any();
+            bool showLeft3 = numAppColumns >= 1 && _listLeft3.Any();
+            
+            var visibilityFlags = new[] { showLeft1, showLeft2, showLeft3, true, _listRight.Any() };
+
+            int visibleCount = 0;
+            for (int i = 0; i < columnDefinitions.Length; i++)
             {
-                if (isVisible)
+                if (visibilityFlags[i])
                 {
-                    col.Width = new GridLength(columnWidthInDips);
-                    lb.Visibility = Visibility.Visible;
+                    columnDefinitions[i].Width = new GridLength(1, GridUnitType.Star);
+                    listBoxes[i].Visibility = Visibility.Visible;
                     visibleCount++;
                 }
                 else
                 {
-                    col.Width = new GridLength(0);
-                    lb.Visibility = Visibility.Collapsed;
+                    columnDefinitions[i].Width = new GridLength(0);
+                    listBoxes[i].Visibility = Visibility.Collapsed;
                 }
             }
-
-            SetColumnState(ColLeft1, ListBoxLeft1, _listLeft1.Any());
-            SetColumnState(ColLeft2, ListBoxLeft2, _listLeft2.Any());
-            SetColumnState(ColLeft3, ListBoxLeft3, _listLeft3.Any());
-            SetColumnState(ColCenter, ListBoxCenter, true); // Center column is always active.
-            SetColumnState(ColRight, ListBoxRight, _listRight.Any());
 
             return visibleCount;
         }
@@ -627,11 +662,11 @@ namespace Switcheroo
             // to ensure all visible columns fit within the constrained window size.
             if (calculatedWidthInDips > Width)
             {
-                if (_listLeft1.Any()) ColLeft1.Width = new GridLength(1, GridUnitType.Star);
-                if (_listLeft2.Any()) ColLeft2.Width = new GridLength(1, GridUnitType.Star);
-                if (_listLeft3.Any()) ColLeft3.Width = new GridLength(1, GridUnitType.Star);
+                if (ColLeft1.Width.Value > 0) ColLeft1.Width = new GridLength(1, GridUnitType.Star);
+                if (ColLeft2.Width.Value > 0) ColLeft2.Width = new GridLength(1, GridUnitType.Star);
+                if (ColLeft3.Width.Value > 0) ColLeft3.Width = new GridLength(1, GridUnitType.Star);
                 ColCenter.Width = new GridLength(1, GridUnitType.Star);
-                if (_listRight.Any()) ColRight.Width = new GridLength(1, GridUnitType.Star);
+                if (ColRight.Width.Value > 0) ColRight.Width = new GridLength(1, GridUnitType.Star);
             }
 
             // Force the layout to update so that ActualWidth and ActualHeight are correct for positioning.
@@ -672,7 +707,13 @@ namespace Switcheroo
         /// </summary>
         private void Switch()
         {
-            var currentListBox = _listBoxes[_activeColumnIndex];
+            if (_visibleListBoxes.Count == 0 || _activeColumnIndex < 0 || _activeColumnIndex >= _visibleListBoxes.Count)
+            {
+                HideWindow();
+                return;
+            }
+
+            var currentListBox = _visibleListBoxes[_activeColumnIndex];
             if (currentListBox.SelectedItems.Count > 0)
             {
                 foreach (var item in currentListBox.SelectedItems)
@@ -779,14 +820,37 @@ namespace Switcheroo
             if (Keyboard.Modifiers == ModifierKeys.Alt && key == Key.OemTilde)
             {
                 e.Handled = true;
-                int nextIndex = _activeColumnIndex - 1;
-                // If we moved left from the far-left column, or if we are on the far-right column,
-                // jump to the center column to start the rotation.
-                if (nextIndex < 0 || _activeColumnIndex == 4)
+
+                // 1. Create a list of columns eligible for this specific cycle
+                //    (all visible columns except the pinned column on the right).
+                var cycleableColumns = _visibleListBoxes.Where(lb => lb != ListBoxRight).ToList();
+
+                if (cycleableColumns.Count == 0)
                 {
-                    nextIndex = 3;
+                    return; // Nothing to cycle through
                 }
-                SetActiveColumn(nextIndex);
+
+                // 2. Get the currently active ListBox and find its position in our special cycle list.
+                var currentActiveListBox = _visibleListBoxes[_activeColumnIndex];
+                int currentCycleIndex = cycleableColumns.IndexOf(currentActiveListBox);
+
+                int nextCycleIndex;
+                if (currentCycleIndex == -1)
+                {
+                    // 3a. If the active column was the pinned column (not in our list),
+                    //     jump to the last column in the cycle (which is always the center column).
+                    nextCycleIndex = cycleableColumns.Count - 1;
+                }
+                else
+                {
+                    // 3b. Otherwise, just cycle backward within the eligible columns.
+                    nextCycleIndex = (currentCycleIndex - 1 + cycleableColumns.Count) % cycleableColumns.Count;
+                }
+
+                // 4. Get the target ListBox from our cycle list and activate it.
+                var nextListBox = cycleableColumns[nextCycleIndex];
+                SetActiveColumn(_listBoxes.IndexOf(nextListBox));
+
                 return;
             }
 
@@ -800,7 +864,7 @@ namespace Switcheroo
                     int nextIndex = _activeColumnIndex - 1;
                     if (nextIndex >= 0)
                     {
-                        SetActiveColumn(nextIndex);
+                        SetActiveColumn(_listBoxes.IndexOf(_visibleListBoxes[nextIndex]));
                     }
                     return;
                 }
@@ -809,9 +873,9 @@ namespace Switcheroo
                 {
                     e.Handled = true;
                     int nextIndex = _activeColumnIndex + 1;
-                    if (nextIndex < _listBoxes.Count)
+                    if (nextIndex < _visibleListBoxes.Count)
                     {
-                        SetActiveColumn(nextIndex);
+                        SetActiveColumn(_listBoxes.IndexOf(_visibleListBoxes[nextIndex]));
                     }
                     return;
                 }
@@ -825,9 +889,9 @@ namespace Switcheroo
             if (focusedListBox != null)
             {
                 int newIndex = _listBoxes.IndexOf(focusedListBox);
-                if (newIndex != -1 && newIndex != _activeColumnIndex)
+                if (newIndex != -1)
                 {
-                    SetActiveColumn(newIndex, InitialFocus.NextItem);
+                     SetActiveColumn(newIndex, InitialFocus.NextItem);
                 }
             }
         }
@@ -958,9 +1022,12 @@ namespace Switcheroo
             _listCenter.Clear();
 
             // If a side column was active, switch to the center for search results.
-            if (_activeColumnIndex != 3)
+            int centerIndex = _listBoxes.IndexOf(ListBoxCenter);
+            int visibleCenterIndex = _visibleListBoxes.IndexOf(ListBoxCenter);
+
+            if (_activeColumnIndex != visibleCenterIndex)
             {
-                SetActiveColumn(3);
+                SetActiveColumn(centerIndex);
             }
 
             var query = tb.Text;
@@ -1085,8 +1152,7 @@ namespace Switcheroo
                 else if (middleClickAction == 2)
                 {
                     // Close the currently SELECTED/highlighted window
-                    var currentListBox = _listBoxes[_activeColumnIndex];
-                    win = currentListBox.SelectedItem as AppWindowViewModel;
+                    win = _visibleListBoxes[_activeColumnIndex].SelectedItem as AppWindowViewModel;
                 }
 
                 if (win != null)
@@ -1110,7 +1176,7 @@ namespace Switcheroo
         /// </summary>
         private async void CloseWindow(object sender, ExecutedRoutedEventArgs e)
         {
-            var currentListBox = _listBoxes[_activeColumnIndex];
+            var currentListBox = _visibleListBoxes[_activeColumnIndex];
             if (currentListBox.SelectedItem == null)
             {
                 e.Handled = true;
@@ -1130,9 +1196,10 @@ namespace Switcheroo
         private async void CloseColumn(object sender, ExecutedRoutedEventArgs e)
         {
             // This command only applies to the three leftmost "app" columns.
-            if (_activeColumnIndex >= 0 && _activeColumnIndex <= 2)
+            var currentListBox = _visibleListBoxes[_activeColumnIndex];
+            var appListBoxes = new[] { ListBoxLeft1, ListBoxLeft2, ListBoxLeft3 };
+            if (appListBoxes.Contains(currentListBox))
             {
-                var currentListBox = _listBoxes[_activeColumnIndex];
                 if (currentListBox.Items.Count > 0)
                 {
                     var windowsToClose = currentListBox.Items.Cast<AppWindowViewModel>().ToList();
@@ -1149,26 +1216,27 @@ namespace Switcheroo
         /// <param name="abortOnFailure">If true, the process will stop if any single window fails to close.</param>
         private async Task CloseWindowsAsync(IEnumerable<AppWindowViewModel> windowsToClose, bool abortOnFailure)
         {
-            // Before closing, capture the current state for intelligent UI updates later.
-            var originalIndex = _activeColumnIndex;
-            var originalListBox = _listBoxes[originalIndex];
-            var selectedIndex = originalListBox.SelectedIndex;
+            // 1. Capture the state BEFORE closing windows.
+            var originalActiveListBox = _visibleListBoxes.Count > _activeColumnIndex ? _visibleListBoxes[_activeColumnIndex] : null;
+            int originalSelectedIndex = originalActiveListBox?.SelectedIndex ?? -1;
+            var originalVisibleIndex = _activeColumnIndex;
 
-            // Calculate the expected index adjustment. We need to know how many windows *before*
-            // our selection are being closed, so we can adjust our selection index downward to maintain
-            // the cursor's relative position.
-            var windowsToCloseSet = new HashSet<AppWindowViewModel>(windowsToClose);
-            int adjustment = 0;
-            for (int i = 0; i < selectedIndex; i++)
+            // 2. Calculate how many items BEFORE the current selection are being closed to adjust the index later.
+            int selectionAdjustment = 0;
+            if (originalActiveListBox != null && originalSelectedIndex > 0)
             {
-                if (windowsToCloseSet.Contains(originalListBox.Items[i]))
+                var windowsToCloseSet = new HashSet<AppWindowViewModel>(windowsToClose);
+                for (int i = 0; i < originalSelectedIndex; i++)
                 {
-                    adjustment++;
+                    if (windowsToCloseSet.Contains(originalActiveListBox.Items[i] as AppWindowViewModel))
+                    {
+                        selectionAdjustment++;
+                    }
                 }
             }
 
-            // Sequentially attempt to close the windows.
-            foreach (var win in windowsToClose)
+            // 3. Sequentially attempt to close the windows.
+            foreach (var win in windowsToClose.ToList()) // Use ToList() to create a copy, avoiding collection modification issues.
             {
                 bool isClosed = await _windowCloser.TryCloseAsync(win);
                 if (isClosed)
@@ -1177,55 +1245,42 @@ namespace Switcheroo
                 }
                 else if (abortOnFailure)
                 {
-                    // A window failed to close, and we are configured to abort the entire operation.
-                    break;
+                    break; // Stop the entire operation if one window fails to close.
                 }
             }
 
-            // After the operation is complete, update the UI.
+            // 4. After closing, check if we need to exit entirely.
             if (_unfilteredWindowList.Count == 0)
             {
                 HideWindow();
                 return;
             }
 
-            if (originalListBox.Items.Count > 0)
-            {
-                // The column is still active, so update the selection within it.
-                // Apply the calculated adjustment to find the new logical index.
-                int newSelectedIndex = selectedIndex - adjustment;
+            // 5. Re-evaluate which columns are visible now that data has changed.
+            ConfigureColumnLayout(0); // Width doesn't matter here, this just updates visibility.
+            _visibleListBoxes.Clear();
+            _visibleListBoxes.AddRange(_listBoxes.Where(lb => lb.Visibility == Visibility.Visible));
 
-                // Clamp the new index to be within the valid range of the now-smaller list.
-                originalListBox.SelectedIndex = Math.Max(0, Math.Min(newSelectedIndex, originalListBox.Items.Count - 1));
-            }
-            else
+            if (_visibleListBoxes.Count == 0) { HideWindow(); return; } // Safeguard
+
+            // 6. Intelligently determine the new active column and selection.
+            int newActiveVisibleIndex;
+
+            // Case A: The original column is still visible and has items.
+            if (originalActiveListBox != null && originalActiveListBox.Visibility == Visibility.Visible && originalActiveListBox.HasItems)
             {
-                // The column we were in is now empty, find the next logical column to focus on.
-                bool foundNewColumn = false;
-                // Search right, towards the center.
-                for (int i = originalIndex + 1; i < _listBoxes.Count; i++)
-                {
-                    if (_listBoxes[i].Items.Count > 0)
-                    {
-                        SetActiveColumn(i);
-                        foundNewColumn = true;
-                        break;
-                    }
-                }
-                // If not found, search left.
-                if (!foundNewColumn)
-                {
-                    for (int i = originalIndex - 1; i >= 0; i--)
-                    {
-                        if (_listBoxes[i].Items.Count > 0)
-                        {
-                            SetActiveColumn(i);
-                            break;
-                        }
-                    }
-                }
+                newActiveVisibleIndex = _visibleListBoxes.IndexOf(originalActiveListBox);
+                int newSelectedIndex = originalSelectedIndex - selectionAdjustment;
+                originalActiveListBox.SelectedIndex = Math.Max(0, Math.Min(newSelectedIndex, originalActiveListBox.Items.Count - 1));
+            }
+            else // Case B: The original column disappeared. Find a logical fallback.
+            {
+                // Try to focus on the column that now occupies the original's position, clamping to the new bounds.
+                newActiveVisibleIndex = Math.Min(originalVisibleIndex, _visibleListBoxes.Count - 1);
             }
 
+            // 7. Activate the determined column and scroll the selection into view.
+            SetActiveColumn(_listBoxes.IndexOf(_visibleListBoxes[newActiveVisibleIndex]));
             ScrollSelectedItemIntoView();
         }
 
@@ -1260,7 +1315,7 @@ namespace Switcheroo
         /// </summary>
         private void StartNewInstance(object sender, ExecutedRoutedEventArgs e)
         {
-            var currentListBox = _listBoxes[_activeColumnIndex];
+            var currentListBox = _visibleListBoxes[_activeColumnIndex];
             if (currentListBox.SelectedItem == null)
             {
                 e.Handled = true;
@@ -1306,7 +1361,13 @@ namespace Switcheroo
 
         private void PreviousItem()
         {
-            var currentListBox = _listBoxes[_activeColumnIndex];
+            // Add this guard clause to prevent out-of-range exceptions.
+            if (_visibleListBoxes.Count == 0 || _activeColumnIndex < 0 || _activeColumnIndex >= _visibleListBoxes.Count)
+            {
+                return;
+            }
+
+            var currentListBox = _visibleListBoxes[_activeColumnIndex];
             if (currentListBox.Items.Count > 0)
             {
                 if (currentListBox.SelectedIndex > 0)
@@ -1329,7 +1390,13 @@ namespace Switcheroo
 
         private void NextItem()
         {
-            var currentListBox = _listBoxes[_activeColumnIndex];
+            // Add this guard clause to prevent out-of-range exceptions.
+            if (_visibleListBoxes.Count == 0 || _activeColumnIndex < 0 || _activeColumnIndex >= _visibleListBoxes.Count)
+            {
+                return;
+            }
+
+            var currentListBox = _visibleListBoxes[_activeColumnIndex];
             if (currentListBox.Items.Count > 0)
             {
                 if (currentListBox.SelectedIndex < currentListBox.Items.Count - 1)
@@ -1347,7 +1414,7 @@ namespace Switcheroo
 
         private void ScrollSelectedItemIntoView()
         {
-            var currentListBox = _listBoxes[_activeColumnIndex];
+            var currentListBox = _visibleListBoxes[_activeColumnIndex];
             if (currentListBox.SelectedItem != null)
             {
                 currentListBox.ScrollIntoView(currentListBox.SelectedItem);

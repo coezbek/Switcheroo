@@ -49,7 +49,14 @@
                 <LineBreak />
                 <Italic>* Requires a restart of Switcheroo</Italic>
             </TextBlock>
-            <TextBlock Margin="5,10,5,1">Column Width (in pixels):</TextBlock>
+            <TextBlock TextWrapping="Wrap" Margin="5,10,5,1">Number of columns for most frequently used processes:</TextBlock>
+            <ComboBox Name="NumberOfAppColumnsComboBox" Margin="25,5,0,10" Width="150" HorizontalAlignment="Left">
+                <ComboBoxItem Content="0" Tag="0"/>
+                <ComboBoxItem Content="1" Tag="1"/>
+                <ComboBoxItem Content="2" Tag="2"/>
+                <ComboBoxItem Content="3" Tag="3"/>
+            </ComboBox>
+            <TextBlock TextWrapping="Wrap" Margin="5,10,5,1">Base Column Width (in pixels):</TextBlock>
             <TextBox Name="ColumnWidth" Margin="25,5,0,10" Width="150" HorizontalAlignment="Left" />
             <Grid Margin="5">
                 <Grid.ColumnDefinitions>

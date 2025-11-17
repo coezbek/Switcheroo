@@ -69,6 +69,7 @@ namespace Switcheroo
             SwitchOnSingleClickCheckBox.IsChecked = Settings.Default.SwitchOnSingleClick;
             MiddleClickActionComboBox.SelectedIndex = Settings.Default.MiddleClickAction;
             RunAsAdministrator.IsChecked = Settings.Default.RunAsAdmin;
+            NumberOfAppColumnsComboBox.SelectedIndex = Settings.Default.NumberOfAppColumns;
             ColumnWidth.Text = Settings.Default.UserWidth.ToString();
         }
 
@@ -122,6 +123,7 @@ namespace Switcheroo
             Settings.Default.SwitchOnSingleClick = SwitchOnSingleClickCheckBox.IsChecked.GetValueOrDefault();
             Settings.Default.MiddleClickAction = MiddleClickActionComboBox.SelectedIndex;
             Settings.Default.RunAsAdmin = RunAsAdministrator.IsChecked.GetValueOrDefault();
+            Settings.Default.NumberOfAppColumns = NumberOfAppColumnsComboBox.SelectedIndex;
             double columnWidth;
             if (double.TryParse(ColumnWidth.Text, out columnWidth))
             {

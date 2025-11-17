@@ -182,14 +182,25 @@ namespace Switcheroo.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("<?xml version=\"1.0\" encoding=\"utf-16\"?>\r\n<ArrayOfString xmlns:xsi=\"http://www.w3." +
-            "org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\r\n " +
-            " <string>thunderbird</string>\r\n  <string>outlook</string>\r\n</ArrayOfString>")]
+            "org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" />")]
         public global::System.Collections.Specialized.StringCollection PinnedProcesses {
             get {
                 return ((global::System.Collections.Specialized.StringCollection)(this["PinnedProcesses"]));
             }
             set {
                 this["PinnedProcesses"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("3")]
+        public int NumberOfAppColumns {
+            get {
+                return ((int)(this["NumberOfAppColumns"]));
+            }
+            set {
+                this["NumberOfAppColumns"] = value;
             }
         }
     }
