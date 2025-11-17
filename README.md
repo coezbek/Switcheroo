@@ -77,18 +77,13 @@ Switcheroo displays windows in five columns:
 - [x] Make it user configurable if single or double click is needed to switch to a window.
 - [x] Holding Ctrl while releasing Alt in `_altTabAutoSwitch` mode keeps Switcheroo open.
 - [x] Make pinned windows configurable from the UI.
-- [ ] Allow to highlight some of the windows based on regex rules.
 - [x] For left/app columns allow Alt+Shift+W to close all windows in that column.
 - [x] Add right click menu to windows for "Close", "Pin/Unpin", "Switch", "Open File Location", "Copy Window Title".
-  - [ ] Tagging windows - https://github.com/kvakulo/Switcheroo/issues/174
-  - [ ] Assign shortcut - https://github.com/elig0n/Switcheroo/issues/30
 - [x] Add Right Shift key support in shift key checks - from fork georgeyu/Switcheroo
 - [x] New screenshot
 - [x] Show message bubble when Switcheroo has started.
-- [ ] Add option to disable stand-alone `ALT` keypress to switch to selected window. Currently this is enabled by default, but a bit surprising (see: https://github.com/kvakulo/Switcheroo/pull/128)
 - [x] Fix: Empty Shortcut will use Backspace as the shortcut - https://github.com/kvakulo/Switcheroo/issues/172
 - [x] Feat: Support for middle click to close windows - https://github.com/kvakulo/Switcheroo/issues/166
-- [ ] Dark mode/theme support.
 - [x] Build of tagged releases doesn't properly show the changelog in the release notes.
 - [x] Add Alt+E shortcut to open a new explorer window.
 
