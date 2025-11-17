@@ -91,6 +91,7 @@ namespace Switcheroo.Core
                 var uwpProcess = window.UwpUnderlyingProcess;
                 if (uwpProcess == null)
                 {
+                    Console.WriteLine("[ERROR] UWP underlying process is null in GetUwpIcon2.");
                     return null;
                 }
 
@@ -107,6 +108,7 @@ namespace Switcheroo.Core
                     WinApi.GetPackageFullName(hprocess, ref bufferLength, null);
                     if (bufferLength == 0)
                     {
+                        Console.WriteLine("[ERROR] Buffer length is zero in GetUwpIcon2.");
                         return null;
                     }
 
@@ -292,14 +294,23 @@ namespace Switcheroo.Core
         {
             try
             {
+                // Console.WriteLine($"[INFO] Getting UWP icon for window: {window.Title}");
                 var hprocess = WinApi.OpenProcess(WinApi.ProcessAccess.QueryLimitedInformation, false, window.Process.Id);
-                if (hprocess == IntPtr.Zero) return null;
+                if (hprocess == IntPtr.Zero) 
+                {
+                    Console.WriteLine("[ERROR] Could not open UWP process in GetUwpIcon.");
+                    return null;
+                }
 
                 try
                 {
                     uint bufferLength = 0;
                     WinApi.GetPackageFullName(hprocess, ref bufferLength, null);
-                    if (bufferLength == 0) return null;
+                    if (bufferLength == 0)
+                    {
+                        Console.WriteLine("[ERROR] Buffer length is zero in GetUwpIcon.");
+                        return null;
+                    }
 
                     var sb = new StringBuilder((int)bufferLength);
                     WinApi.GetPackageFullName(hprocess, ref bufferLength, sb);
@@ -323,13 +334,19 @@ namespace Switcheroo.Core
 
                     var manifestPath = Path.Combine(path, "AppxManifest.xml");
 
-                    if (!File.Exists(manifestPath)) return null;
+                    if (!File.Exists(manifestPath)) {
+                        Console.WriteLine($"[ERROR] Manifest file not found at path: {manifestPath}");
+                        return null;
+                    }
 
                     var manifest = new XmlDocument();
                     manifest.Load(manifestPath);
 
                     var node = manifest.SelectSingleNode("//*[local-name()='Logo']");
-                    if (node == null) return null;
+                    if (node == null) {
+                        Console.WriteLine("[ERROR] Logo node not found in manifest.");
+                        return null;
+                    }
                     
                     var logoPath = Path.Combine(path, node.InnerText);
 
@@ -342,6 +359,7 @@ namespace Switcheroo.Core
             }
             catch
             {
+                Console.WriteLine($"[ERROR] Exception in GetUwpIcon");
                 return null;
             }
         }

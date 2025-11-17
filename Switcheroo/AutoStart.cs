@@ -55,8 +55,9 @@ namespace Switcheroo
             {
                 return File.Exists(GetAppLinkPath());
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"[ERROR] Exception checking if auto-start is enabled: {ex.Message}");
                 return false;
             }
         }
@@ -76,8 +77,9 @@ namespace Switcheroo
             {
                 File.Delete(appLink);
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"[ERROR] Exception disabling auto-start: {ex.Message}");
                 throw new AutoStartException(
                     "It was not possible to delete the shortcut to Switcheroo in the startup folder");
             }
@@ -110,8 +112,9 @@ namespace Switcheroo
                     Marshal.FinalReleaseComObject(shell);
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"[ERROR] Exception enabling auto-start: {ex.Message}");
                 throw new AutoStartException(
                     "It was not possible to create a shortcut to Switcheroo in the startup folder");
             }

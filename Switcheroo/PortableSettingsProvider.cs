@@ -85,8 +85,9 @@ namespace Switcheroo
                         _xmlDocument = new XmlDocument();
                         _xmlDocument.Load(_filePath);
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
+                        Console.WriteLine($"[ERROR] Exception loading settings from '{_filePath}': {ex.Message}");
                     }
 
                     if (_xmlDocument.SelectSingleNode(_rootNodeName) != null)
@@ -124,12 +125,13 @@ namespace Switcheroo
             {
                 _rootDocument.Save(_filePath);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                /* 
-                 * If this is a portable application and the device has been 
-                 * removed then this will fail, so don't do anything. It's 
-                 * probably better for the application to stop saving settings 
+                Console.WriteLine($"[ERROR] Exception saving settings to '{_filePath}': {ex.Message}");
+                /*
+                 * If this is a portable application and the device has been
+                 * removed then this will fail, so don't do anything. It's
+                 * probably better for the application to stop saving settings
                  * rather than just crashing outright. Probably.
                  */
             }
