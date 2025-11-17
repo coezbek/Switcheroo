@@ -356,5 +356,55 @@ namespace Switcheroo.Core
             public IntPtr resourceId;
             public IntPtr publisherId;
         }
+
+        // Multi-monitor support
+        [DllImport("user32.dll")]
+        public static extern bool GetCursorPos(out ManagedWinapi.Windows.POINT lpPoint);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr MonitorFromPoint(ManagedWinapi.Windows.POINT pt, MonitorOptions dwFlags);
+
+        [DllImport("user32.dll")]
+        public static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+
+        // DPI awareness support
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetDC(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        public static extern int ReleaseDC(IntPtr hWnd, IntPtr hDC);
+
+        [DllImport("gdi32.dll")]
+        public static extern int GetDeviceCaps(IntPtr hdc, int nIndex);
+
+        [DllImport("Shcore.dll")]
+        public static extern int GetDpiForMonitor(IntPtr hmonitor, MonitorDpiType dpiType, out uint dpiX, out uint dpiY);
+
+        public const int LOGPIXELSX = 88;
+        public const int LOGPIXELSY = 90;
+
+        public enum MonitorDpiType
+        {
+            MDT_EFFECTIVE_DPI = 0,
+            MDT_ANGULAR_DPI = 1,
+            MDT_RAW_DPI = 2,
+            MDT_DEFAULT = MDT_EFFECTIVE_DPI
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        public struct MONITORINFO
+        {
+            public int cbSize;
+            public ManagedWinapi.Windows.RECT rcMonitor;
+            public ManagedWinapi.Windows.RECT rcWork;
+            public uint dwFlags;
+        }
+
+        public enum MonitorOptions : uint
+        {
+            MONITOR_DEFAULTTONULL = 0x00000000,
+            MONITOR_DEFAULTTOPRIMARY = 0x00000001,
+            MONITOR_DEFAULTTONEAREST = 0x00000002
+        }
     }
 }
