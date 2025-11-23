@@ -68,6 +68,9 @@ namespace Switcheroo
             AutoSwitch.IsEnabled = Settings.Default.AltTabHook;
             SwitchOnSingleClickCheckBox.IsChecked = Settings.Default.SwitchOnSingleClick;
             MiddleClickActionComboBox.SelectedIndex = Settings.Default.MiddleClickAction;
+            MaxResultsCheckBox.IsChecked = Settings.Default.MaximumResultCountEnabled;
+            MaxResultsBox.Text = Settings.Default.MaximumResultCount.ToString();
+            MaxResultsBox.IsEnabled = Settings.Default.MaximumResultCountEnabled;
             RunAsAdministrator.IsChecked = Settings.Default.RunAsAdmin;
             NumberOfAppColumnsComboBox.SelectedIndex = Settings.Default.NumberOfAppColumns;
             ColumnWidth.Text = Settings.Default.UserWidth.ToString();
@@ -122,6 +125,12 @@ namespace Switcheroo
             Settings.Default.AutoSwitch = AutoSwitch.IsChecked.GetValueOrDefault();
             Settings.Default.SwitchOnSingleClick = SwitchOnSingleClickCheckBox.IsChecked.GetValueOrDefault();
             Settings.Default.MiddleClickAction = MiddleClickActionComboBox.SelectedIndex;
+            Settings.Default.MaximumResultCountEnabled = MaxResultsCheckBox.IsChecked.GetValueOrDefault();
+            int maxResults;
+            if (int.TryParse(MaxResultsBox.Text, out maxResults))
+            {
+                Settings.Default.MaximumResultCount = maxResults;
+            }
             Settings.Default.RunAsAdmin = RunAsAdministrator.IsChecked.GetValueOrDefault();
             Settings.Default.NumberOfAppColumns = NumberOfAppColumnsComboBox.SelectedIndex;
             double columnWidth;
@@ -270,6 +279,22 @@ namespace Switcheroo
         private void HotKeyCheckBox_OnUnchecked(object sender, RoutedEventArgs e)
         {
             HotkeyPreview.IsEnabled = false;
+        }
+
+        private void MaxResultsCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            MaxResultsBox.IsEnabled = true;
+        }
+
+        private void MaxResultsCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            MaxResultsBox.IsEnabled = false;
+        }
+
+        private void NumberValidationTextBox(object sender, System.Windows.Input.TextCompositionEventArgs e)
+        {
+            System.Text.RegularExpressions.Regex regex = new System.Text.RegularExpressions.Regex("[^0-9]+");
+            e.Handled = regex.IsMatch(e.Text);
         }
     }
 }

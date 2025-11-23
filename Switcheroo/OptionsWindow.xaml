@@ -42,6 +42,18 @@
             <TextBlock Margin="25,0,5,10" FontSize="10" Foreground="DimGray" TextWrapping="Wrap">
                 Configure what happens when you middle-click on a window item.
             </TextBlock>
+            <StackPanel Orientation="Horizontal" Margin="5,5,5,1">
+                <CheckBox Name="MaxResultsCheckBox"
+                          VerticalAlignment="Center"
+                          Checked="MaxResultsCheckBox_Checked"
+                          Unchecked="MaxResultsCheckBox_Unchecked">
+                    Limit search results to:
+                </CheckBox>
+                <TextBox Name="MaxResultsBox" Width="50" Margin="10,0,0,0" VerticalAlignment="Center" PreviewTextInput="NumberValidationTextBox"/>
+            </StackPanel>
+            <TextBlock Margin="25,0,5,10" FontSize="10" Foreground="DimGray" TextWrapping="Wrap">
+                Improving performance by showing fewer results.
+            </TextBlock>
             <CheckBox x:Name="RunAsAdministrator" Margin="5,5,5,1" Content="Run as Administrator *"/>
             <TextBlock Margin="25,0,5,10" FontSize="10" Foreground="DimGray" TextWrapping="Wrap">
                 This is needed if you want <Span FontFamily="Consolas" FontWeight="Bold">Alt + Tab</Span> to work when programs

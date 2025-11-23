@@ -67,9 +67,26 @@ namespace Switcheroo.Core
                     return null;
                 }
 
-                return AllChildWindows
-                    .Select(w => w.Process)
-                    .FirstOrDefault(p => p.Id != Process.Id);
+                // Optimization: Do not ToList() the AllChildWindows.
+                // Enumerate and stop immediately when the CoreWindow is found.
+                foreach (var child in AllChildWindows)
+                {
+                    if (child.ClassName == "Windows.UI.Core.CoreWindow")
+                    {
+                        return child.Process;
+                    }
+                }
+
+                // Fallback: Find first process that isn't the host frame
+                foreach (var child in AllChildWindows)
+                {
+                    if (child.Process.Id != Process.Id)
+                    {
+                        return child.Process;
+                    }
+                }
+
+                return null;
             }
         }
 
@@ -264,9 +281,8 @@ namespace Switcheroo.Core
 
         private string GetUwpProcessTitle()
         {
-            var underlyingProcess = AllChildWindows.Where(w => w.Process.Id != Process.Id)
-                                                   .Select(w => w.Process)
-                                                   .FirstOrDefault();
+            // Optimization: Use the optimized UwpUnderlyingProcess property
+            var underlyingProcess = UwpUnderlyingProcess;
 
             if (underlyingProcess != null && !string.IsNullOrEmpty(underlyingProcess.ProcessName))
             {

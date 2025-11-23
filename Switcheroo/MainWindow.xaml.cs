@@ -43,7 +43,6 @@ using Switcheroo.Core;
 using Switcheroo.Core.Matchers;
 using Switcheroo.Properties;
 using System.Windows.Input;
-using System.Windows.Interop;
 using Application = System.Windows.Application;
 using MenuItem = System.Windows.Forms.MenuItem;
 using MessageBox = System.Windows.MessageBox;
@@ -119,6 +118,9 @@ namespace Switcheroo
             ShowStartupNotification();
 
             Opacity = 0;
+
+            // Preload data to eliminate lag on first toggle
+            PreloadData();
         }
 
         /// =================================
@@ -358,6 +360,16 @@ namespace Switcheroo
             return null;
         }
 
+        private void PreloadData()
+        {
+            // This creates the window list and fetches icons into the MemoryCache
+            // while the window is still invisible. This eliminates the lag on first toggle.
+            LoadData(InitialFocus.NextItem);
+
+            // Hide immediately so it doesn't flicker
+            HideWindow();
+        }
+
         private void LoadData(InitialFocus focus)
         {
             // Use cached monitor if available, otherwise will fall back to primary screen
@@ -382,7 +394,7 @@ namespace Switcheroo
             var firstWindow = _unfilteredWindowList.FirstOrDefault();
             bool foregroundWindowMovedToBottom = false;
 
-            if (firstWindow != null && AreWindowsRelated(firstWindow.AppWindow, _foregroundWindow))
+            if (firstWindow != null && _foregroundWindow != null && AreWindowsRelated(firstWindow.AppWindow, _foregroundWindow))
             {
                 _unfilteredWindowList.RemoveAt(0);
                 _unfilteredWindowList.Add(firstWindow);
@@ -487,7 +499,13 @@ namespace Switcheroo
 
             tb.Clear();
             tb.Focus();
-            CenterWindow(monitor);
+
+            // Only center window if we have monitor information (skip during preload)
+            if (monitor != null)
+            {
+                CenterWindow(monitor);
+            }
+
             ScrollSelectedItemIntoView();
         }
 
@@ -1035,13 +1053,22 @@ namespace Switcheroo
             var context = new WindowFilterContext<AppWindowViewModel>
             {
                 Windows = _unfilteredWindowList,
-                ForegroundWindowProcessTitle = new AppWindow(_foregroundWindow.HWnd).ProcessTitle
+                ForegroundWindowProcessTitle = _foregroundWindow != null ? new AppWindow(_foregroundWindow.HWnd).ProcessTitle : string.Empty
             };
 
-            var filterResults = new WindowFilterer().Filter(context, query).ToList();
+            var filterResultsEnumerable = new WindowFilterer().Filter(context, query);
+
+            // Apply Maximum Result Count limit if enabled
+            if (Settings.Default.MaximumResultCountEnabled)
+            {
+                filterResultsEnumerable = filterResultsEnumerable.Take(Settings.Default.MaximumResultCount);
+            }
+
+            var filterResults = filterResultsEnumerable.ToList();
 
             foreach (var filterResult in filterResults)
             {
+                // Expensive operations (Highlighting) now only run on the limited set
                 filterResult.AppWindow.FormattedTitle = GetFormattedTitleFromBestResult(filterResult.WindowTitleMatchResults);
                 filterResult.AppWindow.FormattedProcessTitle = GetFormattedTitleFromBestResult(filterResult.ProcessTitleMatchResults);
                 _listCenter.Add(filterResult.AppWindow);

@@ -51,6 +51,9 @@ Switcheroo displays windows in five columns:
 ## Todo List
 
 - [x] Support for disabling column-mode.
+- [x] Support for limiting maximum number of results during search to improve performance on systems with many windows.
+- [x] UWP app search speed improvements.
+- [x] Preload window data on startup to improve first invocation speed.
 - [ ] Support for Virtual Desktops
 - [ ] Assign shortcut - https://github.com/elig0n/Switcheroo/issues/30
 - [ ] Tagging windows - https://github.com/kvakulo/Switcheroo/issues/174
@@ -93,7 +96,7 @@ Switcheroo displays windows in five columns:
 
 ## Forks
 
-Relative to [@kvakulo kvakulo / Switcheroo](https://github.com/kvakulo/Switcheroo).
+Relative to [@kvakulo kvakulo / Switcheroo](https://github.com/kvakulo/Switcheroo). This overview was generated from the [Github Fork Treeview](https://github.com/kvakulo/Switcheroo/network/members) and using my [Github Fork Bookmarklet](https://github.com/coezbek/github-fork-bookmarklet/).
 
 `[x]` indicates that I have either merged relevant changes or found the fork not applicable to this version.
 
@@ -106,13 +109,17 @@ Relative to [@kvakulo kvakulo / Switcheroo](https://github.com/kvakulo/Switchero
 *   [@crar01 crar01 / Switcheroo](https://github.com/crar01/Switcheroo) - Ahead: 10, Behind: 0
     * [x] [@dvygolov dvygolov / Switcheroo](https://github.com/dvygolov/Switcheroo) - Ahead: 5, Behind: 0
         * [x] Github Actions Release/Build support
+        * [x] Multi-monitor fixes
 * [x] [@cutecycle cutecycle / Switcheroo](https://github.com/cutecycle/Switcheroo) - Ahead: 8, Behind: 28
     * Closes all windows of selected process with Ctrl+Shift+W => We are adding this for our columns with Alt+Shift+W
 *   [@daanzu daanzu / Switcheroo](https://github.com/daanzu/Switcheroo) - Ahead: 72, Behind: 0
     *   [@jsonMartin jsonMartin / Switcheroo](https://github.com/jsonMartin/Switcheroo) - Ahead: 13, Behind: 0
-        *   [@nqbao1234 nqbao1234 / Switcheroo](https://github.com/nqbao1234/Switcheroo) - Ahead: 3, Behind: 0
+        * [x] Preload window data on startup for performance
+        *  [@nqbao1234 nqbao1234 / Switcheroo](https://github.com/nqbao1234/Switcheroo) - Ahead: 3, Behind: 0
+            * [ ] Added MoveWindowToCursor functionality which some people like.
 *   [@elig0n elig0n / Switcheroo](https://github.com/elig0n/Switcheroo) - Ahead: 98, Behind: 0
-    *   [@Celend Celend / Switcheroo](https://github.com/Celend/Switcheroo) - Ahead: 3, Behind: 0
+    * [x] [@Celend Celend / Switcheroo](https://github.com/Celend/Switcheroo) - Ahead: 3, Behind: 0
+        * This fork from @elig0n adds a mode which allows searching by process name in Alt+Tab mode. Since we are using many different keyboard shortcuts, we can't merge this.
     *   [@fc1943s fc1943s / Switcheroo](https://github.com/fc1943s/Switcheroo) - Ahead: 22, Behind: 3
     *   [@rawbeans rawbeans / Switcheroo](https://github.com/rawbeans/Switcheroo) - Ahead: 4, Behind: 0
     *   [@windedge windedge / Switcheroo](https://github.com/windedge/Switcheroo) - Ahead: 6, Behind: 98

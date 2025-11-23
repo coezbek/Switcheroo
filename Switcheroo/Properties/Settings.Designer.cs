@@ -203,5 +203,29 @@ namespace Switcheroo.Properties {
                 this["NumberOfAppColumns"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool MaximumResultCountEnabled {
+            get {
+                return ((bool)(this["MaximumResultCountEnabled"]));
+            }
+            set {
+                this["MaximumResultCountEnabled"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("15")]
+        public int MaximumResultCount {
+            get {
+                return ((int)(this["MaximumResultCount"]));
+            }
+            set {
+                this["MaximumResultCount"] = value;
+            }
+        }
     }
 }
