@@ -602,10 +602,11 @@ namespace Switcheroo
                 }
             }
 
-            if (_activeColumnIndex >= 0 && _activeColumnIndex < _visibleListBoxes.Count)
+            // Clear highlight from ALL listboxes to ensure no stale highlights remain.
+            // This fixes the issue where the center column stays highlighted when switching via Alt+~
+            foreach (var listBox in _listBoxes)
             {
-                // Revert to the default background defined in the XAML Style (ControlBackgroundBrush)
-                _visibleListBoxes[_activeColumnIndex].ClearValue(System.Windows.Controls.Control.BackgroundProperty);
+                listBox.ClearValue(System.Windows.Controls.Control.BackgroundProperty);
             }
 
             _activeColumnIndex = visibleIndex;
