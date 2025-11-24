@@ -18,10 +18,13 @@
  * along with Switcheroo.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Input;
+using System.Windows.Interop;
 using ManagedWinapi;
 using Switcheroo.Core;
 using Switcheroo.Properties;
@@ -35,6 +38,11 @@ namespace Switcheroo
     {
         private readonly HotKey _hotkey;
         private HotkeyViewModel _hotkeyViewModel;
+
+        [DllImport("dwmapi.dll")]
+        private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
+
+        private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
 
         public OptionsWindow()
         {
@@ -74,6 +82,37 @@ namespace Switcheroo
             RunAsAdministrator.IsChecked = Settings.Default.RunAsAdmin;
             NumberOfAppColumnsComboBox.SelectedIndex = Settings.Default.NumberOfAppColumns;
             ColumnWidth.Text = Settings.Default.UserWidth.ToString();
+
+            // Set the theme combobox based on current setting
+            var currentTheme = Settings.Default.Theme;
+            foreach (System.Windows.Controls.ComboBoxItem item in ThemeComboBox.Items)
+            {
+                if (item.Tag.ToString() == currentTheme)
+                {
+                    ThemeComboBox.SelectedItem = item;
+                    break;
+                }
+            }
+        }
+
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+            UpdateWindowChrome();
+        }
+
+        private void UpdateWindowChrome()
+        {
+            try
+            {
+                var hwnd = new WindowInteropHelper(this).Handle;
+                int useImmersiveDarkMode = Theme.IsUsingDarkTheme() ? 1 : 0;
+                DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref useImmersiveDarkMode, sizeof(int));
+            }
+            catch
+            {
+                // DWM API might not be available on older Windows versions
+            }
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
@@ -138,6 +177,13 @@ namespace Switcheroo
             {
                 Settings.Default.UserWidth = columnWidth;
             }
+
+            // Save theme setting
+            if (ThemeComboBox.SelectedItem is System.Windows.Controls.ComboBoxItem selectedTheme)
+            {
+                Settings.Default.Theme = selectedTheme.Tag.ToString();
+            }
+
             Settings.Default.Save();
                 
             Close();
@@ -295,6 +341,17 @@ namespace Switcheroo
         {
             System.Text.RegularExpressions.Regex regex = new System.Text.RegularExpressions.Regex("[^0-9]+");
             e.Handled = regex.IsMatch(e.Text);
+        }
+
+        private void ThemeComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            // Apply the theme immediately when changed
+            if (ThemeComboBox.SelectedItem is System.Windows.Controls.ComboBoxItem selectedTheme)
+            {
+                Settings.Default.Theme = selectedTheme.Tag.ToString();
+                Theme.Apply();
+                UpdateWindowChrome();
+            }
         }
     }
 }

@@ -1,8 +1,13 @@
-﻿<Application x:Class="Switcheroo.App"
+<Application x:Class="Switcheroo.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Load Light theme by default to prevent design-time crashes -->
+                <ResourceDictionary Source="/Switcheroo;component/Themes/Light.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

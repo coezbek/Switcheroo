@@ -54,5 +54,8 @@
     <Setting Name="MaximumResultCount" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">15</Value>
     </Setting>
+    <Setting Name="Theme" Type="System.String" Scope="User">
+      <Value Profile="(Default)">System</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

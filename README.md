@@ -57,11 +57,13 @@ Switcheroo displays windows in five columns:
 - [x] Support processes at UNC paths
 - [x] Performance optimizations for large number of windows (100+)
 - [x] Add utility for spawning 50/500 windows for perf testing.
+- [x] Dark mode
+- [ ] Dark mode screenshot in README
 - [ ] Support for Virtual Desktops
 - [ ] Assign shortcut - https://github.com/elig0n/Switcheroo/issues/30
 - [ ] Tagging windows - https://github.com/kvakulo/Switcheroo/issues/174
 - [ ] Add option to disable stand-alone `ALT` keypress to switch to selected window. Currently this is enabled by default, but a bit surprising (see: https://github.com/kvakulo/Switcheroo/pull/128)
-- [ ] Dark mode/theme support.
+- [ ] Theme support.
 - [ ] Allow to highlight some of the windows based on regex rules.
 - [ ] Fix update checker
 - [ ] Proper logging/crash reporting

@@ -2,8 +2,9 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Switcheroo Options" ResizeMode="NoResize" SizeToContent="WidthAndHeight"
-        ShowInTaskbar="False" WindowStyle="ToolWindow" Background="{x:Static SystemColors.WindowBrush}" Height="380"
-        MaxWidth="350">
+        ShowInTaskbar="False" WindowStyle="ToolWindow" Height="380"
+        MaxWidth="350"
+        Background="{DynamicResource WindowBackgroundBrush}">
     <Window.Resources>
     </Window.Resources>
     <Grid>
@@ -19,18 +20,18 @@
                      Width="150"
                      HorizontalAlignment="Left"/>
             <CheckBox Name="AltTabCheckBox" Checked="AltTabCheckBox_OnChecked" Unchecked="AltTabCheckBox_OnUnchecked" Margin="5,5,5,1">Activate Switcheroo with Alt+Tab</CheckBox>
-            <TextBlock Margin="25,0,5,10" FontSize="10" Foreground="DimGray" TextWrapping="Wrap">
+            <TextBlock Margin="25,0,5,10" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" TextWrapping="Wrap">
                 Use Switcheroo instead of the integrated task switcher in Windows.
             </TextBlock>
             <CheckBox Name="AutoSwitch" Margin="5,5,5,1">Automatically switch window when releasing Alt + Tab</CheckBox>
-            <TextBlock Margin="25,0,5,10" FontSize="10" Foreground="DimGray" TextWrapping="Wrap">
+            <TextBlock Margin="25,0,5,10" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" TextWrapping="Wrap">
                 Faster and more native-like switching between windows.<LineBreak />
                 <LineBreak />
                 Use <Span FontFamily="Consolas" FontWeight="Bold">Ctrl + Alt + Tab</Span> for displaying Switcheroo with search activated, or
                 press <Span FontFamily="Consolas" FontWeight="Bold">Alt + S</Span> when the Switcheroo overlay appears.
             </TextBlock>
             <CheckBox Name="SwitchOnSingleClickCheckBox" Margin="5,5,5,1">Switch window on single click</CheckBox>
-            <TextBlock Margin="25,0,5,10" FontSize="10" Foreground="DimGray" TextWrapping="Wrap">
+            <TextBlock Margin="25,0,5,10" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" TextWrapping="Wrap">
                 If unchecked, you will need to double-click to switch to a window.
             </TextBlock>
             <TextBlock Margin="5,5,5,1">Middle-click action:</TextBlock>
@@ -39,7 +40,7 @@
                 <ComboBoxItem Content="Close item under mouse cursor" Tag="1"/>
                 <ComboBoxItem Content="Close highlighted item" Tag="2"/>
             </ComboBox>
-            <TextBlock Margin="25,0,5,10" FontSize="10" Foreground="DimGray" TextWrapping="Wrap">
+            <TextBlock Margin="25,0,5,10" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" TextWrapping="Wrap">
                 Configure what happens when you middle-click on a window item.
             </TextBlock>
             <StackPanel Orientation="Horizontal" Margin="5,5,5,1">
@@ -51,11 +52,11 @@
                 </CheckBox>
                 <TextBox Name="MaxResultsBox" Width="50" Margin="10,0,0,0" VerticalAlignment="Center" PreviewTextInput="NumberValidationTextBox"/>
             </StackPanel>
-            <TextBlock Margin="25,0,5,10" FontSize="10" Foreground="DimGray" TextWrapping="Wrap">
+            <TextBlock Margin="25,0,5,10" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" TextWrapping="Wrap">
                 Improving performance by showing fewer results.
             </TextBlock>
             <CheckBox x:Name="RunAsAdministrator" Margin="5,5,5,1" Content="Run as Administrator *"/>
-            <TextBlock Margin="25,0,5,10" FontSize="10" Foreground="DimGray" TextWrapping="Wrap">
+            <TextBlock Margin="25,0,5,10" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" TextWrapping="Wrap">
                 This is needed if you want <Span FontFamily="Consolas" FontWeight="Bold">Alt + Tab</Span> to work when programs
                 running with higher privileges than your user account are in focus.<LineBreak />
                 <LineBreak />
@@ -70,6 +71,15 @@
             </ComboBox>
             <TextBlock TextWrapping="Wrap" Margin="5,10,5,1">Base Column Width (in pixels):</TextBlock>
             <TextBox Name="ColumnWidth" Margin="25,5,0,10" Width="150" HorizontalAlignment="Left" />
+            <TextBlock Margin="5,10,5,1">Theme:</TextBlock>
+            <ComboBox Name="ThemeComboBox" Margin="25,5,0,5" Width="150" HorizontalAlignment="Left" SelectionChanged="ThemeComboBox_SelectionChanged">
+                <ComboBoxItem Content="Light" Tag="Light"/>
+                <ComboBoxItem Content="Dark" Tag="Dark"/>
+                <ComboBoxItem Content="System" Tag="System"/>
+            </ComboBox>
+            <TextBlock Margin="25,0,5,10" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" TextWrapping="Wrap">
+                Choose the color theme. System follows your Windows theme settings.
+            </TextBlock>
             <Grid Margin="5">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition />

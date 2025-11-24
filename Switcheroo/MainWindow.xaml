@@ -53,32 +53,32 @@
         <local:WindowHandleToCachedIconConverter x:Key="WindowHandleToCachedIconConverter" />
     </Window.Resources>
 
-    <Border Padding="3" Background="White" BorderBrush="DarkGray" BorderThickness="1" Name="Border">
+    <Border Padding="3" Background="{DynamicResource WindowBackgroundBrush}" BorderBrush="{DynamicResource WindowBorderBrush}" BorderThickness="1" Name="Border">
         <DockPanel LastChildFill="True">
             <DockPanel Margin="4,0,4,0" Name="HelpPanel" Background="Transparent" Height="0" DockPanel.Dock="Top">
-                <TextBlock FontSize="10" DockPanel.Dock="Left">
+                <TextBlock FontSize="10" DockPanel.Dock="Left" Foreground="{DynamicResource PrimaryTextBrush}">
                     type to search
                 </TextBlock>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
-                    <TextBlock FontSize="10" Margin="0,0,8,0">
+                    <TextBlock FontSize="10" Margin="0,0,8,0" Foreground="{DynamicResource PrimaryTextBrush}">
                         <TextBlock.ToolTip>
                             <TextBlock>Press <Bold>tab</Bold> or <Bold>↑↓</Bold> to navigate in the list</TextBlock>
                         </TextBlock.ToolTip>
                         <Bold>tab</Bold> or <Bold>↑↓</Bold> to navigate
                     </TextBlock>
-                    <TextBlock FontSize="10" Margin="0,0,8,0">
+                    <TextBlock FontSize="10" Margin="0,0,8,0" Foreground="{DynamicResource PrimaryTextBrush}">
                         <TextBlock.ToolTip>
                             <TextBlock>Press <Bold>enter</Bold> to open the highlighted window</TextBlock>
                         </TextBlock.ToolTip>
                         <Bold>enter</Bold> to open a window
                     </TextBlock>
-                    <TextBlock FontSize="10" Margin="0,0,8,0">
+                    <TextBlock FontSize="10" Margin="0,0,8,0" Foreground="{DynamicResource PrimaryTextBrush}">
                         <TextBlock.ToolTip>
                             <TextBlock>Press <Bold>ctrl+w</Bold> to close the highlighted window</TextBlock>
                         </TextBlock.ToolTip>
                         <Bold>ctrl+w</Bold> to close a window
                     </TextBlock>
-                    <TextBlock FontSize="10">
+                    <TextBlock FontSize="10" Foreground="{DynamicResource PrimaryTextBrush}">
                         <TextBlock.ToolTip>
                             <TextBlock>Press <Bold>esc</Bold> to dismiss the Switcheroo overlay</TextBlock>
                         </TextBlock.ToolTip>
@@ -88,7 +88,7 @@
             </DockPanel>
             <Grid DockPanel.Dock="Top">
                 <TextBox Name="tb" Padding="5" VerticalAlignment="Top" TextChanged="TextChanged" FontSize="15"
-                         VerticalContentAlignment="Center">
+                         VerticalContentAlignment="Center" Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource PrimaryTextBrush}">
                     <TextBox.InputBindings>
                         <!-- For now, leave these here.  Would it be better to route them upward? -->
                         <KeyBinding Command="local:MainWindow.ScrollListUpCommand" Key="Up" />
@@ -101,7 +101,7 @@
                            VerticalAlignment="Center"
                            FontSize="18" FontWeight="Bold" Opacity="0.4"
                            PreviewMouseDown="ShowHelpTextBlock_OnPreviewMouseDown"
-                           Name="ShowHelpTextBlock" Cursor="Hand" Foreground="DarkGray">
+                           Name="ShowHelpTextBlock" Cursor="Hand" Foreground="{DynamicResource HelpIconBrush}">
                     <TextBlock.Text>?</TextBlock.Text>
                     <TextBlock.Triggers>
                         <EventTrigger RoutedEvent="MouseEnter">
@@ -139,65 +139,69 @@
                         <Setter Property="Padding" Value="0"/>
                         <Setter Property="MinWidth" Value="150"/>
                         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+                        <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
                     </Style>
 
                     <DataTemplate x:Key="WindowItemTemplate">
                         <DockPanel>
-                            <DockPanel.Resources>
-                                <Duration x:Key="FadeOutDuration">00:00:00.150</Duration>
-
-                                <system:Double x:Key="FadeOutOpacity">0.5</system:Double>
-                                <local:BoolToDoubleConverter x:Key="ImageOpacityConverter" IfTrue="{StaticResource FadeOutOpacity}" IfFalse="1.0" />
-
-                                <Color x:Key="FadeOutColor">Silver</Color>
-                                <local:BoolToColorConverter x:Key="TitleColorConverter" IfTrue="{StaticResource FadeOutColor}" IfFalse="Black" />
-                                <local:BoolToColorConverter x:Key="ProcessColorConverter" IfTrue="{StaticResource FadeOutColor}" IfFalse="Gray" />
-
-                                <Style TargetType="{x:Type TextBlock}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsBeingClosed}" Value="True">
-                                            <DataTrigger.EnterActions>
-                                                <BeginStoryboard>
-                                                    <Storyboard>
-                                                        <ColorAnimation Duration="{StaticResource FadeOutDuration}" Storyboard.TargetProperty="(TextBox.Foreground).(SolidColorBrush.Color)" To="{StaticResource FadeOutColor}" />
-                                                    </Storyboard>
-                                                </BeginStoryboard>
-                                            </DataTrigger.EnterActions>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                                <Style TargetType="{x:Type Image}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsBeingClosed}" Value="True">
-                                            <DataTrigger.EnterActions>
-                                                <BeginStoryboard>
-                                                    <Storyboard>
-                                                        <DoubleAnimation Duration="{StaticResource FadeOutDuration}" Storyboard.TargetProperty="Opacity" To="{StaticResource FadeOutOpacity}" />
-                                                    </Storyboard>
-                                                </BeginStoryboard>
-                                            </DataTrigger.EnterActions>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </DockPanel.Resources>
-                            <Image DockPanel.Dock="Left" Height="32" Margin="3,0" Opacity="{Binding IsBeingClosed, Converter={StaticResource ImageOpacityConverter}, Mode=OneTime}">
+                            <!-- Icon -->
+                            <Image DockPanel.Dock="Left" Height="32" Margin="3,0">
                                 <Image.Source>
                                     <PriorityBinding>
                                         <Binding Path="HWnd" Converter="{StaticResource WindowHandleToIconConverter}" IsAsync="True" />
                                         <Binding Path="HWnd" Converter="{StaticResource WindowHandleToCachedIconConverter}" />
                                     </PriorityBinding>
                                 </Image.Source>
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Opacity" Value="1.0" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsBeingClosed}" Value="True">
+                                                <DataTrigger.EnterActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Duration="0:0:0.150" Storyboard.TargetProperty="Opacity" To="0.5" />
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </DataTrigger.EnterActions>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
                             </Image>
+
                             <StackPanel Margin="3,0">
-                                <TextBlock local:FormattedTextAttribute.FormattedText="{Binding Path=FormattedTitle}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap">
-                                    <TextBlock.Foreground>
-                                        <SolidColorBrush Color="{Binding IsBeingClosed, Converter={StaticResource TitleColorConverter}, Mode=OneTime}" />
-                                    </TextBlock.Foreground>
+                                <!-- Main Title -->
+                                <TextBlock local:FormattedTextAttribute.FormattedText="{Binding Path=FormattedTitle}"
+                                           TextTrimming="CharacterEllipsis" TextWrapping="NoWrap">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <!-- Default Color from Theme -->
+                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+                                            <Style.Triggers>
+                                                <!-- If Closing, Switch to Faded Color from Theme -->
+                                                <DataTrigger Binding="{Binding IsBeingClosed}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource FadedTextBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
                                 </TextBlock>
-                                <TextBlock local:FormattedTextAttribute.FormattedText="{Binding Path=FormattedProcessTitle}" FontSize="10" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap">
-                                    <TextBlock.Foreground>
-                                        <SolidColorBrush Color="{Binding IsBeingClosed, Converter={StaticResource ProcessColorConverter}, Mode=OneTime}" />
-                                    </TextBlock.Foreground>
+
+                                <!-- Process Title -->
+                                <TextBlock local:FormattedTextAttribute.FormattedText="{Binding Path=FormattedProcessTitle}"
+                                           FontSize="10" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsBeingClosed}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource FadedTextBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
                                 </TextBlock>
                             </StackPanel>
                         </DockPanel>
@@ -225,8 +229,6 @@
                         <EventSetter Event="PreviewMouseDown" Handler="ListBoxItem_PreviewMouseDown" />
                         <EventSetter Event="ContextMenuOpening" Handler="ListBoxItem_ContextMenuOpening" />
                     </Style>
-
-                    <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="{x:Static SystemColors.HighlightColor}" Opacity=".4" />
                 </Grid.Resources>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition x:Name="ColLeft1" Width="*" />
