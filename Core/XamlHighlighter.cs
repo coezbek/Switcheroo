@@ -31,6 +31,11 @@ namespace Switcheroo.Core
         {
             if (stringParts == null) return string.Empty;
 
+            if (stringParts.All(p => !p.IsMatch))
+            {
+                return string.Join("", stringParts.Select(p => p.Value).ToArray());
+            }
+
             var xDocument = new XDocument(new XElement("Root"));
             foreach (var stringPart in stringParts)
             {
