@@ -406,5 +406,26 @@ namespace Switcheroo.Core
             MONITOR_DEFAULTTOPRIMARY = 0x00000001,
             MONITOR_DEFAULTTONEAREST = 0x00000002
         }
+
+        /* Shell API for getting icons */
+        [DllImport("shell32.dll", CharSet = CharSet.Auto)]
+        public static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbFileInfo, uint uFlags);
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        public struct SHFILEINFO
+        {
+            public IntPtr hIcon;
+            public int iIcon;
+            public uint dwAttributes;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+            public string szDisplayName;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)]
+            public string szTypeName;
+        }
+
+        public const uint SHGFI_ICON = 0x100;
+        public const uint SHGFI_LARGEICON = 0x0; // 32x32
+        public const uint SHGFI_SMALLICON = 0x1; // 16x16
+        public const uint SHGFI_USEFILEATTRIBUTES = 0x10;
     }
 }

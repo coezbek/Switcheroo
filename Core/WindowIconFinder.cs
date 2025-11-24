@@ -43,21 +43,23 @@ namespace Switcheroo.Core
             Icon icon = null;
             try
             {
+                // 1. Try UWP logic
                 if (window.IsUwpApp())
                 {
                     icon = GetUwpIcon2(window);
                 }
 
+                // 2. Try sending WM_GETICON to the window
                 if (icon == null)
                 {
-                    // http://msdn.microsoft.com/en-us/library/windows/desktop/ms632625(v=vs.85).aspx
                     IntPtr response;
-                    var outvalue = WinApi.SendMessageTimeout(window.HWnd, 0x007F,
-                        size == WindowIconSize.Small ? new IntPtr(2) : new IntPtr(1),
+                    var outvalue = WinApi.SendMessageTimeout(window.HWnd, 0x007F, // WM_GETICON
+                        size == WindowIconSize.Small ? new IntPtr(2) : new IntPtr(1), // 2=ICON_SMALL2, 1=ICON_BIG
                         IntPtr.Zero, WinApi.SendMessageTimeoutFlags.SMTO_ABORTIFHUNG, 100, out response);
 
                     if (outvalue == IntPtr.Zero || response == IntPtr.Zero)
                     {
+                        // Fallback to Class Icon
                         response = WinApi.GetClassLongPtr(window.HWnd,
                             size == WindowIconSize.Small
                                 ? WinApi.ClassLongFlags.GCLP_HICONSM
@@ -67,21 +69,77 @@ namespace Switcheroo.Core
                     if (response != IntPtr.Zero)
                     {
                         icon = Icon.FromHandle(response);
+                        // Clone so we don't depend on the window handle lifespan for this GDI object
+                        if (icon != null) icon = (Icon)icon.Clone();
                     }
                 }
 
+                // 3. Try extracting from the Executable Path
                 if (icon == null)
                 {
                     var executablePath = window.ExecutablePath;
-                    icon = Icon.ExtractAssociatedIcon(executablePath);
+
+                    if (!string.IsNullOrEmpty(executablePath))
+                    {
+                        // Try standard .NET method first (Fast, but fails on UNC)
+                        try
+                        {
+                            // File.Exists check is safer, but purely local paths might still work with ExtractAssociatedIcon
+                            if (File.Exists(executablePath))
+                            {
+                                icon = Icon.ExtractAssociatedIcon(executablePath);
+                            }
+                        }
+                        catch
+                        {
+                            // Ignored, will fall back to Shell API
+                        }
+
+                        // Fallback: Shell API (Handles UNC paths like \\wsl.localhost\...)
+                        if (icon == null)
+                        {
+                            icon = ExtractIconFromPath(executablePath, size);
+                        }
+                    }
                 }
             }
-            catch (Win32Exception ex)
+            catch (Exception ex)
             {
-                // Could not extract icon
-                Console.WriteLine($"[ERROR] Win32Exception in IconFinder: {ex.Message}");
+                // Catch-all to ensure icon extraction never crashes the app
+                Console.WriteLine($"[ERROR] Exception in IconFinder: {ex.Message}");
             }
             return icon;
+        }
+
+        private Icon ExtractIconFromPath(string path, WindowIconSize size)
+        {
+            try
+            {
+                var shinfo = new WinApi.SHFILEINFO();
+                uint flags = WinApi.SHGFI_ICON;
+
+                if (size == WindowIconSize.Small)
+                    flags |= WinApi.SHGFI_SMALLICON;
+                else
+                    flags |= WinApi.SHGFI_LARGEICON;
+
+                // SHGetFileInfo works with UNC paths
+                var res = WinApi.SHGetFileInfo(path, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), flags);
+
+                if (res != IntPtr.Zero && shinfo.hIcon != IntPtr.Zero)
+                {
+                    using (var tempIcon = Icon.FromHandle(shinfo.hIcon))
+                    {
+                        return (Icon)tempIcon.Clone();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Failed to extract icon via Shell API for '{path}': {ex.Message}");
+            }
+            
+            return null;
         }
 
         public static Icon GetUwpIcon2(AppWindow window)
