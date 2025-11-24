@@ -54,6 +54,8 @@ Switcheroo displays windows in five columns:
 - [x] Support for limiting maximum number of results during search to improve performance on systems with many windows.
 - [x] UWP app search speed improvements.
 - [x] Preload window data on startup to improve first invocation speed.
+- [x] Support processes at UNC paths
+- [x] Performance optimizations for large number of windows (100+)
 - [ ] Support for Virtual Desktops
 - [ ] Assign shortcut - https://github.com/elig0n/Switcheroo/issues/30
 - [ ] Tagging windows - https://github.com/kvakulo/Switcheroo/issues/174
@@ -141,15 +143,18 @@ Relative to [@kvakulo kvakulo / Switcheroo](https://github.com/kvakulo/Switchero
 * [x] [@MuffinK MuffinK / Switcheroo](https://github.com/MuffinK/Switcheroo) - Ahead: 3, Behind: 0
     * Keyboard shortcut changes only.
 *   [@raymond-w-ko raymond-w-ko / Switcheroo](https://github.com/raymond-w-ko/Switcheroo) - Ahead: 7, Behind: 0
-*   [@ryuslash ryuslash / Switcheroo](https://github.com/ryuslash/Switcheroo) - Ahead: 7, Behind: 0
+* [x] [@ryuslash ryuslash / Switcheroo](https://github.com/ryuslash/Switcheroo) - Ahead: 7, Behind: 0
+    * Integrated Everything search into Switcheroo. => Out of scope for this fork.
 *   [@schMarXman schMarXman / Switcheroo](https://github.com/schMarXman/Switcheroo) - Ahead: 1, Behind: 0
 *   [@sohaibz-leaders sohaibz-leaders / Switcheroo](https://github.com/sohaibz-leaders/Switcheroo) - Ahead: 1, Behind: 0
 *   [@szym1991 szym1991 / Switcheroo](https://github.com/szym1991/Switcheroo) - Ahead: 1, Behind: 0
     * [ ] Scrollbar styling => Investigate.
 * [x] [@trond-snekvik trond-snekvik / Switcheroo](https://github.com/trond-snekvik/Switcheroo) - Ahead: 1, Behind: 19
     * [x] J/K Keybindings for up/down navigation
-*   [@tversteeg tversteeg / Switcheroo](https://github.com/tversteeg/Switcheroo) - Ahead: 12, Behind: 0
+* [x] [@tversteeg tversteeg / Switcheroo](https://github.com/tversteeg/Switcheroo) - Ahead: 12, Behind: 0
+    * Pulls only commits from other forks.
 *   [@valuex valuex / Switcheroo](https://github.com/valuex/Switcheroo) - Ahead: 6, Behind: 0
+    * Pinyin support for search functionality => Out of scope for this fork. 
 * [x] [@WizaXxX WizaXxX / Switcheroo_1C](https://github.com/WizaXxX/Switcheroo_1C) - Ahead: 6, Behind: 0
     * I think this was an attempt to hide malware in Switcheroo
 
