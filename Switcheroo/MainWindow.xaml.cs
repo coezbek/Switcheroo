@@ -73,11 +73,11 @@ namespace Switcheroo
         private MonitorInfo _currentMonitor; // Cache the current monitor for reloads
 
         // New collections for each column
-        private readonly ObservableCollection<AppWindowViewModel> _listLeft1;
-        private readonly ObservableCollection<AppWindowViewModel> _listLeft2;
-        private readonly ObservableCollection<AppWindowViewModel> _listLeft3;
-        private readonly ObservableCollection<AppWindowViewModel> _listCenter;
-        private readonly ObservableCollection<AppWindowViewModel> _listRight;
+        private ObservableCollection<AppWindowViewModel> _listLeft1;
+        private ObservableCollection<AppWindowViewModel> _listLeft2;
+        private ObservableCollection<AppWindowViewModel> _listLeft3;
+        private ObservableCollection<AppWindowViewModel> _listCenter;
+        private ObservableCollection<AppWindowViewModel> _listRight;
 
         // For navigation
         private readonly List<System.Windows.Controls.ListBox> _listBoxes;
@@ -389,8 +389,14 @@ namespace Switcheroo
                 monitor = _currentMonitor;
                 // Console.WriteLine($"[DEBUG] LoadData: Using cached monitor with DPI={(monitor?.DpiScale.ToString("F2") ?? "null")}");
             }
-            
+
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+
+            // 1. Fetch Windows
             _unfilteredWindowList = new WindowFinder().GetWindows().Select(window => new AppWindowViewModel(window)).ToList();
+
+            long tWindowFinder = sw.ElapsedMilliseconds;
+
             var firstWindow = _unfilteredWindowList.FirstOrDefault();
             bool foregroundWindowMovedToBottom = false;
 
@@ -400,12 +406,14 @@ namespace Switcheroo
                 _unfilteredWindowList.Add(firstWindow);
                 foregroundWindowMovedToBottom = true;
             }
-            
-            _listLeft1.Clear();
-            _listLeft2.Clear();
-            _listLeft3.Clear();
-            _listCenter.Clear();
-            _listRight.Clear();
+
+            TitleFormatter.FormatTitlesForDisplay(_unfilteredWindowList);
+
+            var tmpLeft1 = new List<AppWindowViewModel>();
+            var tmpLeft2 = new List<AppWindowViewModel>();
+            var tmpLeft3 = new List<AppWindowViewModel>();
+            var tmpCenter = new List<AppWindowViewModel>();
+            var tmpRight = new List<AppWindowViewModel>();
 
             var handledHwnds = new HashSet<IntPtr>();
 
@@ -426,10 +434,10 @@ namespace Switcheroo
                 .ToList();
             foreach (var window in rightWindows)
             {
-                _listRight.Add(window);
+                tmpRight.Add(window);
                 handledHwnds.Add(window.HWnd);
             }
-            
+
             var remainingForTopApps = _unfilteredWindowList.Where(w => !handledHwnds.Contains(w.HWnd)).ToList();
             var topApps = remainingForTopApps
                 .GroupBy(w => w.ProcessTitle)
@@ -438,9 +446,11 @@ namespace Switcheroo
                 .Take(Settings.Default.NumberOfAppColumns)
                 .ToList();
 
-            var appColumnDataSources = new[] { _listLeft1, _listLeft2, _listLeft3 };
+            long tGrouping = sw.ElapsedMilliseconds;
+
+            var appColumnTargetLists = new[] { tmpLeft1, tmpLeft2, tmpLeft3 };
             var min_number_of_windows_for_own_column = 0;
-        
+
             for (int i = 0; i < topApps.Count; i++)
             {
                 var appGroup = topApps[i];
@@ -448,13 +458,10 @@ namespace Switcheroo
                 // Only give an app its own column if it meets the minimum window count.
                 if (appGroup.Count() >= min_number_of_windows_for_own_column)
                 {
-                    // The most frequent app (topApps[0]) goes into the column closest to the center (ListBoxLeft3 -> _listLeft3).
-                    // The data source array is ordered left-to-right: [_listLeft1, _listLeft2, _listLeft3].
-                    // So, we map the most frequent group to the last index of the data source array.
-                    int targetListIndex = (appColumnDataSources.Length - 1) - i;
+                    int targetListIndex = (appColumnTargetLists.Length - 1) - i;
                     if (targetListIndex >= 0)
                     {
-                        var targetList = appColumnDataSources[targetListIndex];
+                        var targetList = appColumnTargetLists[targetListIndex];
                         foreach (var window in appGroup)
                         {
                             targetList.Add(window);
@@ -465,48 +472,90 @@ namespace Switcheroo
             }
 
             var first10Windows = _unfilteredWindowList.Take(10);
-            var first10Set= new HashSet<IntPtr>();    
-            foreach (var window in first10Windows)
-            {
-                first10Set.Add(window.HWnd);
-            }
+            var first10Set = new HashSet<IntPtr>(first10Windows.Select(w => w.HWnd));
 
-            // We always keep a.) the first 10 windows in the center column (no matter if they are already in left/right) and b.) the window we tab away from
+            long tAppColumns = sw.ElapsedMilliseconds;
+
             var remainingForCenter = _unfilteredWindowList.Where(
-                w => first10Set.Contains(w.HWnd) 
+                w => first10Set.Contains(w.HWnd)
                 || !handledHwnds.Contains(w.HWnd)
                 || w == firstWindow
             );
-            var centerWindows = remainingForCenter.ToList();
-            foreach (var window in centerWindows)
-            {
-                _listCenter.Add(window);
-            }
+            
+            // Add remaining windows to center temp list
+            tmpCenter.AddRange(remainingForCenter);
+
+            long tWindowToColumnAssignment = sw.ElapsedMilliseconds;
 
             _windowCloser = new WindowCloser();
 
-            // Set initial formatted titles for all windows
-            TitleFormatter.FormatTitlesForDisplay(_unfilteredWindowList);
+            long tWindowCloser = sw.ElapsedMilliseconds;
+
+            // OPTIMIZATION: Bulk Assign to UI.
+            // This triggers ONE "Reset" event per list, instead of N "Add" events.
+            // This solves the 100ms lag in SetActiveColumn/Focus/Clear.
+            _listLeft1 = new ObservableCollection<AppWindowViewModel>(tmpLeft1);
+            ListBoxLeft1.ItemsSource = _listLeft1;
+
+            _listLeft2 = new ObservableCollection<AppWindowViewModel>(tmpLeft2);
+            ListBoxLeft2.ItemsSource = _listLeft2;
+
+            _listLeft3 = new ObservableCollection<AppWindowViewModel>(tmpLeft3);
+            ListBoxLeft3.ItemsSource = _listLeft3;
+
+            _listCenter = new ObservableCollection<AppWindowViewModel>(tmpCenter);
+            ListBoxCenter.ItemsSource = _listCenter;
+
+            _listRight = new ObservableCollection<AppWindowViewModel>(tmpRight);
+            ListBoxRight.ItemsSource = _listRight;
+
+            long tAssignListBoxes = sw.ElapsedMilliseconds;
 
             int centerIndex = _listBoxes.IndexOf(ListBoxCenter);
-            SetActiveColumn(centerIndex, focus);
+            
+            SetActiveColumn(centerIndex, focus, false);
+            long tActiveColumn = sw.ElapsedMilliseconds;
 
-            // Correct the selection for the initial Shift+Alt+Tab after the active window has been moved to the end
             if (foregroundWindowMovedToBottom && focus == InitialFocus.PreviousItem)
             {
                 PreviousItem();
             }
+            long tPrevItem = sw.ElapsedMilliseconds;
 
-            tb.Clear();
+            // Prevent recursive LoadData calls from TextChanged during Clear
+            tb.TextChanged -= TextChanged;
+            tb.Clear(); 
+            tb.TextChanged += TextChanged;
+            
             tb.Focus();
 
-            // Only center window if we have monitor information (skip during preload)
+            long tClearAndFocus = sw.ElapsedMilliseconds;
+
             if (monitor != null)
             {
                 CenterWindow(monitor);
             }
+            long tCenter = sw.ElapsedMilliseconds;
 
-            ScrollSelectedItemIntoView();
+            var currentListBox = _visibleListBoxes[_activeColumnIndex];
+            if (currentListBox.SelectedIndex > 0)
+            {
+                ScrollSelectedItemIntoView();
+            }
+
+            long tScroll = sw.ElapsedMilliseconds;
+            // Console.WriteLine($"[DEBUG] LoadData timings (ms):\n" +
+            //                   $"  WindowFinder: {tWindowFinder}\n" +
+            //                   $"  Grouping: {tGrouping - tWindowFinder}\n" +
+            //                   $"  AppColumns: {tAppColumns - tGrouping}\n" +
+            //                   $"  WindowToColumnAssignment: {tWindowToColumnAssignment - tAppColumns}\n" +
+            //                   $"  WindowCloser: {tWindowCloser - tWindowToColumnAssignment}\n" +
+            //                   $"  AssignListBoxes: {tAssignListBoxes - tWindowCloser}\n" +
+            //                   $"  ActiveColumn: {tActiveColumn - tAssignListBoxes}\n" +
+            //                   $"  PrevItem: {tPrevItem - tActiveColumn}\n" +
+            //                   $"  ClearAndFocus: {tClearAndFocus - tPrevItem}\n" +
+            //                   $"  Center: {tCenter - tClearAndFocus}\n" +
+            //                   $"  Scroll: {tScroll - tCenter}");
         }
 
         private static bool AreWindowsRelated(SystemWindow window1, SystemWindow window2)
@@ -514,7 +563,7 @@ namespace Switcheroo
             return window1.HWnd == window2.HWnd || window1.Process.Id == window2.Process.Id;
         }
         
-        private void SetActiveColumn(int index, InitialFocus focus = InitialFocus.NextItem)
+        private void SetActiveColumn(int index, InitialFocus focus = InitialFocus.NextItem, bool scrollIntoView = true)
         {
             var targetListBox = _listBoxes[index];
             _visibleListBoxes.Clear();
@@ -557,7 +606,8 @@ namespace Switcheroo
                         currentListBox.SelectedIndex = 0;
                     }
                 }
-                ScrollSelectedItemIntoView();
+                if (scrollIntoView)
+                    ScrollSelectedItemIntoView();
             }
         }
 
@@ -583,34 +633,9 @@ namespace Switcheroo
 
         private const uint SWP_NOZORDER = 0x0004;
         private const uint SWP_NOACTIVATE = 0x0010;
-
-        /// <summary>
-        /// Configures the column layout, size, and position of the Switcheroo window on the specified monitor.
-        /// </summary>
-        private void CenterWindow(MonitorInfo monitor)
-        {
-            if (monitor == null)
-            {
-                throw new ArgumentNullException(nameof(monitor));
-            }
-
-            // Step 1: Ensure the window is physically on the correct monitor before any sizing.
-            // This forces the OS and WPF to use the target monitor's DPI for all subsequent layout calculations.
-            EnsureWindowIsOnCorrectMonitor(monitor);
-            
-            // Calculate the base column width, adjusted for the monitor's DPI scaling.
-            double baseColumnWidth = Settings.Default.UserWidth > 0 ? Settings.Default.UserWidth : 250;
-            double columnWidthInDips = Math.Max(100, baseColumnWidth / Math.Sqrt(monitor.DpiScale));
-
-            // Step 2: Configure the internal grid layout based on content.
-            int numVisibleColumns = ConfigureColumnLayout(columnWidthInDips);
-
-            // Step 3: Calculate the main window's overall size based on the layout.
-            CalculateAndSetWindowSize(numVisibleColumns, columnWidthInDips, monitor);
-
-            // Step 4: Calculate the final centered position for the correctly-sized window.
-            CalculateAndSetPosition(monitor);
-        }
+        private const uint SWP_NOSIZE = 0x0001;
+        private const uint SWP_NOCOPYBITS = 0x0100;
+        private const uint SWP_DEFERERASE = 0x2000;        
 
         /// <summary>
         /// Moves the window to the target monitor based on raw pixel coordinates. After this call,
@@ -621,7 +646,7 @@ namespace Switcheroo
             if (!IsVisible)
             {
                 var hwnd = new WindowInteropHelper(this).EnsureHandle();
-                SetWindowPos(hwnd, IntPtr.Zero, monitor.WorkArea.Left, monitor.WorkArea.Top, 100, 100, SWP_NOZORDER | SWP_NOACTIVATE);
+                SetWindowPos(hwnd, IntPtr.Zero, monitor.WorkArea.Left, monitor.WorkArea.Top, 0, 0, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOCOPYBITS | SWP_DEFERERASE);
             }
         }
 
@@ -650,73 +675,130 @@ namespace Switcheroo
                 if (visibilityFlags[i])
                 {
                     columnDefinitions[i].Width = new GridLength(1, GridUnitType.Star);
-                    listBoxes[i].Visibility = Visibility.Visible;
+                    if (listBoxes[i].Visibility != Visibility.Visible)
+                        listBoxes[i].Visibility = Visibility.Visible;
                     visibleCount++;
                 }
                 else
                 {
                     columnDefinitions[i].Width = new GridLength(0);
-                    listBoxes[i].Visibility = Visibility.Collapsed;
+                    if (listBoxes[i].Visibility != Visibility.Collapsed)
+                        listBoxes[i].Visibility = Visibility.Collapsed;
                 }
             }
 
             return visibleCount;
         }
 
-        /// <summary>
-        /// Calculates and sets the main window's Width and MaxHeight properties based on the number of
-        /// visible columns and the target monitor's work area.
-        /// </summary>
-        private void CalculateAndSetWindowSize(int numVisibleColumns, double columnWidthInDips, MonitorInfo monitor)
+        private void CenterWindow(MonitorInfo monitor)
         {
-            double calculatedWidthInDips = numVisibleColumns * columnWidthInDips;
-            double maxWidthInDips = monitor.WpfWorkAreaWidth * 0.95;
+            if (monitor == null) throw new ArgumentNullException(nameof(monitor));
 
-            Width = Math.Min(calculatedWidthInDips, maxWidthInDips);
-            Border.MaxHeight = monitor.WpfWorkAreaHeight * 0.9;
-            MinWidth = 400;
+            var sw = System.Diagnostics.Stopwatch.StartNew();
 
-            // If the calculated width exceeds the final window width, switch to proportional ("star") sizing
-            // to ensure all visible columns fit within the constrained window size.
-            if (calculatedWidthInDips > Width)
+            EnsureWindowIsOnCorrectMonitor(monitor);
+
+            long tEnsureOnMonitor = sw.ElapsedMilliseconds;
+            
+            double baseColumnWidth = Settings.Default.UserWidth > 0 ? Settings.Default.UserWidth : 250;
+            double columnWidthInDips = Math.Max(100, baseColumnWidth / Math.Sqrt(monitor.DpiScale));
+
+            // 1. Configure Grid Columns
+            int numVisibleColumns = ConfigureColumnLayout(columnWidthInDips);
+
+            // 2. Calculate Width
+            double calculatedWidth = numVisibleColumns * columnWidthInDips;
+            double maxWidth = monitor.WpfWorkAreaWidth * 0.95;
+            double finalWidth = Math.Min(calculatedWidth, maxWidth);
+            
+            // Apply Width
+            if (Width != finalWidth)
+                Width = finalWidth;
+            if (calculatedWidth > finalWidth)
             {
+                // Switch to star sizing if constrained
                 if (ColLeft1.Width.Value > 0) ColLeft1.Width = new GridLength(1, GridUnitType.Star);
                 if (ColLeft2.Width.Value > 0) ColLeft2.Width = new GridLength(1, GridUnitType.Star);
                 if (ColLeft3.Width.Value > 0) ColLeft3.Width = new GridLength(1, GridUnitType.Star);
                 ColCenter.Width = new GridLength(1, GridUnitType.Star);
                 if (ColRight.Width.Value > 0) ColRight.Width = new GridLength(1, GridUnitType.Star);
             }
+            
+            long tCalculateAndSetWidth = sw.ElapsedMilliseconds;
 
-            // Force the layout to update so that ActualWidth and ActualHeight are correct for positioning.
-            UpdateLayout();
+            // 3. Calculate Height (Manually, to avoid UpdateLayout/Measure)
+            double maxHeight = monitor.WpfWorkAreaHeight * 0.9;
+
+            if (Border.MaxHeight != maxHeight)
+                Border.MaxHeight = maxHeight;
+
+            long tSetMaxHeight = sw.ElapsedMilliseconds;
+
+            // Find max items in any visible column to estimate height
+            int maxItems = 0;
+            if (ListBoxLeft1.Visibility == Visibility.Visible) maxItems = Math.Max(maxItems, _listLeft1.Count);
+            if (ListBoxLeft2.Visibility == Visibility.Visible) maxItems = Math.Max(maxItems, _listLeft2.Count);
+            if (ListBoxLeft3.Visibility == Visibility.Visible) maxItems = Math.Max(maxItems, _listLeft3.Count);
+            if (ListBoxCenter.Visibility == Visibility.Visible) maxItems = Math.Max(maxItems, _listCenter.Count);
+            if (ListBoxRight.Visibility == Visibility.Visible) maxItems = Math.Max(maxItems, _listRight.Count);
+
+            long countItems = sw.ElapsedMilliseconds;
+
+            // Estimate: Header (~45px) + Items (~42px each) + Padding
+            double estimatedHeight = 45 + (maxItems * 42) + 20;
+            double finalHeight = Math.Min(estimatedHeight, maxHeight);
+
+            // Enforce minimum height to look good if empty and round to integer
+            finalHeight = Math.Max(200, Math.Round(finalHeight));
+
+            if (Height != finalHeight) {
+                // Console.WriteLine($"[DEBUG] Setting Height: {finalHeight} (Estimated: {estimatedHeight}, Max: {maxHeight}, Current: {Height})");
+                Height = finalHeight;
+            }
+
+            long tCalculateAndSetHeight = sw.ElapsedMilliseconds;
+
+            // 4. Position
+            // Use the calculated dimensions (finalWidth/finalHeight) instead of ActualWidth/ActualHeight
+            CalculateAndSetPosition(monitor, finalWidth, finalHeight);
+
+            long tCalculateAndSetPosition = sw.ElapsedMilliseconds;
+
+            // Console.WriteLine($"[DEBUG] CenterWindow timings (ms):\n" + 
+            //                   $"  EnsureOnMonitor: {tEnsureOnMonitor}\n" +
+            //                   $"  CalculateAndSetWidth: {tCalculateAndSetWidth - tEnsureOnMonitor}\n" +
+            //                   $"  SetMaxHeight: {tSetMaxHeight - tCalculateAndSetWidth}\n" +
+            //                   $"  CountItems: {countItems - tSetMaxHeight}\n" +
+            //                   $"  CalculateAndSetHeight: {tCalculateAndSetHeight - countItems}\n" +
+            //                   $"  CalculateAndSetPosition: {tCalculateAndSetPosition - tCalculateAndSetHeight}");
         }
 
-        /// <summary>
-        /// Calculates the final Top and Left position of the window to center it on the target monitor.
-        /// This method should be called after the window's size has been set.
-        /// </summary>
-        private void CalculateAndSetPosition(MonitorInfo monitor)
+        private void CalculateAndSetPosition(MonitorInfo monitor, double widthInDips, double heightInDips)
         {
-            // Convert the window's actual size from DIPs to physical pixels for accurate positioning.
-            double actualWidthInPixels = ActualWidth * monitor.DpiScale;
-            double actualHeightInPixels = ActualHeight * monitor.DpiScale;
+            // Convert DIPs to Pixels for monitor math
+            double actualWidthInPixels = widthInDips * monitor.DpiScale;
+            double actualHeightInPixels = heightInDips * monitor.DpiScale;
 
-            // Calculate the horizontal center point in physical pixels.
+            // Horizontal Center
             double physicalCenterOfMonitorX = monitor.WorkArea.Left + (monitor.WorkAreaWidth / 2.0);
             double desiredLeftInPixels = physicalCenterOfMonitorX - (actualWidthInPixels / 2.0);
-
-            // Ensure the window stays within the monitor's boundaries.
-            desiredLeftInPixels = Math.Max(monitor.WorkArea.Left, Math.Min(desiredLeftInPixels, monitor.WorkArea.Left + monitor.WorkAreaWidth - actualWidthInPixels));
             
-            // Convert the final physical position back to DIPs for WPF.
+            // Clamp X
+            desiredLeftInPixels = Math.Max(monitor.WorkArea.Left, Math.Min(desiredLeftInPixels, monitor.WorkArea.Left + monitor.WorkAreaWidth - actualWidthInPixels));
+
+            // Vertical Center / Top Preferred
+            // Prefer 256px from top, unless that pushes the window off bottom, or unless the window is so tall it looks better centered.
+            // Simple logic: Min(Top+256, Centered)
+            double centeredTop = monitor.WorkArea.Top + (monitor.WorkAreaHeight / 2.0) - (actualHeightInPixels / 2.0);
+            double preferredTop = monitor.WorkArea.Top + 256;
+            
+            double desiredTopInPixels = Math.Min(preferredTop, centeredTop);
+            
+            // Clamp Y (ensure it doesn't go above top)
+            desiredTopInPixels = Math.Max(monitor.WorkArea.Top, desiredTopInPixels);
+
+            // Location = new Point(desiredLeftInPixels / monitor.DpiScale, desiredTopInPixels / monitor.DpiScale);
             Left = desiredLeftInPixels / monitor.DpiScale;
-
-            // Calculate the vertical position, preferring a 256px top margin but centering if necessary.
-            double desiredTopInPixels = Math.Min(
-                monitor.WorkArea.Top + 256, // Preferred top position
-                monitor.WorkArea.Top + (monitor.WorkAreaHeight / 2.0) - (actualHeightInPixels / 2.0) // Fallback to center
-            );
-
             Top = desiredTopInPixels / monitor.DpiScale;
         }
 
@@ -927,7 +1009,7 @@ namespace Switcheroo
 
                 // Get the monitor where the mouse cursor is located
                 var cursorMonitor = MonitorHelper.GetMonitorFromCursor();
-                Console.WriteLine($"[DEBUG] hotkey_HotkeyPressed: Got monitor with DPI={(cursorMonitor?.DpiScale.ToString("F2") ?? "null")}");
+                // Console.WriteLine($"[DEBUG] hotkey_HotkeyPressed: Got monitor with DPI={(cursorMonitor?.DpiScale.ToString("F2") ?? "null")}");
 
                 LoadData(InitialFocus.NextItem, cursorMonitor);
 
@@ -943,6 +1025,27 @@ namespace Switcheroo
             }
         }
 
+        private bool isMultiTaskingViewInForeground()
+        {
+            _foregroundWindow = SystemWindow.ForegroundWindow;
+            
+            // If the foreground window closes exactly when we query it, ManagedWinapi throws a Win32Exception.
+            try
+            {
+                if (_foregroundWindow != null && _foregroundWindow.ClassName == "MultitaskingViewFrame")
+                {
+                    return true;
+                }
+            }
+            catch (System.ComponentModel.Win32Exception)
+            {
+                // Window handle is invalid (window likely closed). 
+                // We assume it's not the Windows Task Switcher and proceed.
+            }
+
+            return false;
+        }
+
         private void AltTabPressed(object sender, AltTabHookEventArgs e)
         {
             if (!Settings.Default.AltTabHook)
@@ -951,11 +1054,9 @@ namespace Switcheroo
                 return;
             }
 
-            _foregroundWindow = SystemWindow.ForegroundWindow;
-
-            if (_foregroundWindow.ClassName == "MultitaskingViewFrame")
+            if (isMultiTaskingViewInForeground())
             {
-                // If Windows' task switcher is on the screen then don't do anything
+                // If the Windows Task View is open, do not interfere with Alt+Tab
                 return;
             }
 
@@ -963,12 +1064,18 @@ namespace Switcheroo
 
             if (Visibility != Visibility.Visible)
             {
-                // Get the monitor where the mouse cursor is located
-                var cursorMonitor = MonitorHelper.GetMonitorFromCursor();
-                // Console.WriteLine($"\n\n\n[DEBUG] AltTabPressed: Got monitor with DPI={(cursorMonitor?.DpiScale.ToString("F2") ?? "null")} and working area {cursorMonitor?.WorkArea}");
-                
-                LoadData(e.ShiftDown ? InitialFocus.PreviousItem : InitialFocus.NextItem, cursorMonitor);
+                // [PROFILE] Start
+                var sw = System.Diagnostics.Stopwatch.StartNew();
 
+                // 1. Measure Monitor Detection
+                var cursorMonitor = MonitorHelper.GetMonitorFromCursor();
+                long tMonitor = sw.ElapsedMilliseconds;
+
+                // 2. Measure Data Loading (Logic & WinAPI calls)
+                LoadData(e.ShiftDown ? InitialFocus.PreviousItem : InitialFocus.NextItem, cursorMonitor);
+                long tLoad = sw.ElapsedMilliseconds;
+
+                // 3. Measure UI Rendering & Activation
                 tb.IsEnabled = true;
                 ActivateAndFocusMainWindow();
                 Keyboard.Focus(tb);
@@ -980,6 +1087,16 @@ namespace Switcheroo
                     tb.Text = "Press Alt + S to search";
                 }
                 Opacity = 1;
+                
+                sw.Stop();
+
+                // [PROFILE] Output results
+                // If 'Total' > 300ms, Windows will timeout and show the default switcher.
+                // Console.WriteLine($"[PROFILE] AltTab Activation:" +
+                //                 $" Monitor={tMonitor}ms" +
+                //                 $" | LoadData={tLoad - tMonitor}ms" +
+                //                 $" | UI/Activate={sw.ElapsedMilliseconds - tLoad}ms" +
+                //                 $" | Total={sw.ElapsedMilliseconds}ms");
             }
             else
             {
