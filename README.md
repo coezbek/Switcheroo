@@ -50,14 +50,6 @@ Switcheroo displays windows in five columns:
 
 ## Todo List
 
-- [x] Support for disabling column-mode.
-- [x] Support for limiting maximum number of results during search to improve performance on systems with many windows.
-- [x] UWP app search speed improvements.
-- [x] Preload window data on startup to improve first invocation speed.
-- [x] Support processes at UNC paths
-- [x] Performance optimizations for large number of windows (100+)
-- [x] Add utility for spawning 50/500 windows for perf testing.
-- [x] Dark mode
 - [ ] Dark mode screenshot in README
 - [ ] Support for Virtual Desktops
 - [ ] Assign shortcut - https://github.com/elig0n/Switcheroo/issues/30
@@ -67,6 +59,17 @@ Switcheroo displays windows in five columns:
 - [ ] Allow to highlight some of the windows based on regex rules.
 - [ ] Fix update checker
 - [ ] Proper logging/crash reporting
+
+## New Features in Version 0.9.6
+
+- [x] Support for disabling column-mode.
+- [x] Support for limiting maximum number of results during search to improve performance on systems with many windows.
+- [x] UWP app search speed improvements.
+- [x] Preload window data on startup to improve first invocation speed.
+- [x] Support processes at UNC paths
+- [x] Performance optimizations for large number of windows (100+)
+- [x] Add utility for spawning 50/500 windows for perf testing.
+- [x] Dark mode
 
 ## New Features in Version 0.9.5
 
