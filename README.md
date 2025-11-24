@@ -56,6 +56,7 @@ Switcheroo displays windows in five columns:
 - [x] Preload window data on startup to improve first invocation speed.
 - [x] Support processes at UNC paths
 - [x] Performance optimizations for large number of windows (100+)
+- [x] Add utility for spawning 50/500 windows for perf testing.
 - [ ] Support for Virtual Desktops
 - [ ] Assign shortcut - https://github.com/elig0n/Switcheroo/issues/30
 - [ ] Tagging windows - https://github.com/kvakulo/Switcheroo/issues/174

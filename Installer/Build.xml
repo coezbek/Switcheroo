@@ -55,5 +55,11 @@
     </CreateItem>
     <Zip ZipFileName="Output\switcheroo-portable.zip" Flatten="true" Files="@(ZipFiles)" />
   </Target>
-  
+
+  <Target Name="BuildWindowSpawnerUtil">
+    <MSBuild Projects="$(SolutionDir)\WindowSpawnerUtil\WindowSpawnerUtil.csproj"
+             Targets="$(BuildTarget)"
+             Properties="Configuration=$(Configuration);" />
+  </Target>
+
 </Project>

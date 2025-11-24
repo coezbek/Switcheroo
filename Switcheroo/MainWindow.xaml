@@ -4,7 +4,7 @@
         xmlns:local="clr-namespace:Switcheroo"
         xmlns:system="clr-namespace:System;assembly=mscorlib"
         Closing="OnClose" ShowInTaskbar="False" WindowStyle="None" AllowsTransparency="True"
-        SizeToContent="Height"
+        SizeToContent="Manual"
         Title="" MinWidth="750" Deactivated="MainWindow_OnLostFocus" Loaded="MainWindow_OnLoaded"
         BorderBrush="Transparent" BorderThickness="1"
         Background="Transparent" KeyDown="MainWindow_KeyDown"
@@ -131,6 +131,9 @@
             <Grid Name="ColumnsGrid" DockPanel.Dock="Bottom" Margin="-1,3,-1,0">
                 <Grid.Resources>
                     <Style x:Key="ColumnListBoxStyle" TargetType="{x:Type ListBox}">
+                        <Setter Property="VirtualizingStackPanel.IsVirtualizing" Value="True"/>
+                        <Setter Property="VirtualizingStackPanel.VirtualizationMode" Value="Recycling"/>
+                        <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
                         <Setter Property="SelectionMode" Value="Extended"/>
                         <Setter Property="BorderThickness" Value="0"/>
                         <Setter Property="Padding" Value="0"/>
