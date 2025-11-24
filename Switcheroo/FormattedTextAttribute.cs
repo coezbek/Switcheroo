@@ -52,14 +52,30 @@ namespace Switcheroo
             }
 
             var formattedText = (string) e.NewValue ?? string.Empty;
-            formattedText =
+            if (!formattedText.Contains("<Bold>"))
+            {
+                textBlock.Inlines.Clear();
+                textBlock.Inlines.Add(new Run(formattedText));
+                return;
+            }
+
+            // SLOW PATH: Only used when search terms are actually matched and highlighted
+            var xaml =
                 @"<Span xml:space=""preserve"" xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"">" +
                 formattedText +
                 "</Span>";
 
             textBlock.Inlines.Clear();
-            var result = (Span) XamlReader.Parse(formattedText);
-            textBlock.Inlines.Add(result);
+            try 
+            {
+                var result = (Span) XamlReader.Parse(xaml);
+                textBlock.Inlines.Add(result);
+            }
+            catch
+            {
+                // Fallback for malformed XML (shouldn't happen with XamlHighlighter, but safety first)
+                textBlock.Inlines.Add(new Run(formattedText));
+            }
         }
     }
 }
