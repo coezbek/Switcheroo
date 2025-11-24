@@ -10,8 +10,6 @@ namespace Switcheroo
         // Formats titles for display, applying highlighting and stripping common suffixes
         public static void FormatTitlesForDisplay(List<AppWindowViewModel> windows)
         {
-            var highlighter = new XamlHighlighter();
-
             var processGroups = windows.GroupBy(w => w.ProcessTitle).ToList();
             foreach (var group in processGroups)
             {
@@ -27,7 +25,6 @@ namespace Switcheroo
                 if (commonSuffix != null && titles.Count(t => t.EndsWith(commonSuffix)) < titles.Count / 2.0)
                     commonSuffix = null;
 
-
                 foreach (var window in windowsInGroup)
                 {
                     // Determine display title for window:
@@ -39,7 +36,7 @@ namespace Switcheroo
                             displayTitle = prefix;
                     }
 
-                    window.FormattedTitle = highlighter.Highlight(new[] { new StringPart(displayTitle) });
+                    window.FormattedTitle = displayTitle;
 
                     // Determine process title for window:
                     var processTitleToShow = window.ProcessTitle;
@@ -49,7 +46,7 @@ namespace Switcheroo
                         processTitleToShow.All(c => !char.IsLetter(c) || char.IsLower(c)))
                         processTitleToShow = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(processTitleToShow.ToLower());
 
-                    window.FormattedProcessTitle = highlighter.Highlight(new[] { new StringPart(processTitleToShow) });
+                    window.FormattedProcessTitle = processTitleToShow;
                 }
             }
         }
