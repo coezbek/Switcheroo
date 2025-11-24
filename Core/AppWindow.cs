@@ -28,6 +28,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using ManagedWinapi.Windows;
 using System.Diagnostics;
+using System.IO;
 
 namespace Switcheroo.Core
 {
@@ -36,11 +37,26 @@ namespace Switcheroo.Core
     /// </summary>
     public class AppWindow : SystemWindow
     {
+        // Helper to get PID without creating a heavy System.Diagnostics.Process object
+        public int ProcessId
+        {
+            get
+            {
+                uint pid;
+                WinApi.GetWindowThreadProcessId(HWnd, out pid);
+                return (int)pid;
+            }
+        }
+
         public string ProcessTitle
         {
             get
             {
-                var key = "ProcessTitle-" + HWnd;
+                // Optimization: Cache by PID. 
+                // 500 windows of "TestUtility.exe" will now only result in 1 Win32 API call.
+                int pid = ProcessId;
+                var key = "ProcessTitle-PID-" + pid;
+                
                 var processTitle = MemoryCache.Default.Get(key) as string;
                 if (processTitle == null)
                 {
@@ -50,8 +66,13 @@ namespace Switcheroo.Core
                     }
                     else
                     {
-                        processTitle = Process.ProcessName;
+                        // Use fast Win32 API instead of slow System.Diagnostics.Process.ProcessName
+                        processTitle = GetProcessNameDirect(pid);
                     }
+                    
+                    // Fallback
+                    if (processTitle == null) processTitle = string.Empty;
+
                     MemoryCache.Default.Add(key, processTitle, DateTimeOffset.Now.AddHours(1));
                 }
                 return processTitle;
@@ -78,9 +99,12 @@ namespace Switcheroo.Core
                 }
 
                 // Fallback: Find first process that isn't the host frame
+                // Note: We use the base.Process here because we are already iterating SystemWindow objects 
+                // provided by ManagedWinapi, which unfortunately exposes Process as a property.
+                int currentPid = ProcessId;
                 foreach (var child in AllChildWindows)
                 {
-                    if (child.Process.Id != Process.Id)
+                    if (child.Process.Id != currentPid)
                     {
                         return child.Process;
                     }
@@ -108,7 +132,8 @@ namespace Switcheroo.Core
                 var executablePath = MemoryCache.Default.Get(key) as string;
                 if (executablePath == null)
                 {
-                    executablePath = GetExecutablePath(Process.Id);
+                    // Pass the raw PID, don't use Process.Id which triggers the slow path
+                    executablePath = GetExecutablePath(ProcessId);
                     MemoryCache.Default.Add(key, executablePath, DateTimeOffset.Now.AddHours(1));
                 }
                 return executablePath;
@@ -256,16 +281,15 @@ namespace Switcheroo.Core
             return hasAppropriateApplicationViewCloakType;
         }
 
-        // This method only works on Windows >= Windows Vista
+        // Retrieves the full path using Win32 API to avoid System.Diagnostics.Process overhead
         private static string GetExecutablePath(int processId)
         {
             var buffer = new StringBuilder(1024);
             var hprocess = WinApi.OpenProcess(WinApi.ProcessAccess.QueryLimitedInformation, false, processId);
-            if (hprocess == IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error());
+            if (hprocess == IntPtr.Zero) return null;
 
             try
             {
-                // ReSharper disable once RedundantAssignment
                 var size = buffer.Capacity;
                 if (WinApi.QueryFullProcessImageName(hprocess, 0, buffer, out size))
                 {
@@ -276,7 +300,25 @@ namespace Switcheroo.Core
             {
                 WinApi.CloseHandle(hprocess);
             }
-            throw new Win32Exception(Marshal.GetLastWin32Error());
+            return null;
+        }
+
+        // Retrieves just the process name (e.g. "notepad") efficiently
+        private static string GetProcessNameDirect(int processId)
+        {
+            string fullPath = GetExecutablePath(processId);
+            if (!string.IsNullOrEmpty(fullPath))
+            {
+                try 
+                {
+                    return Path.GetFileNameWithoutExtension(fullPath);
+                }
+                catch 
+                {
+                    // Fallback to empty if path is invalid
+                }
+            }
+            return null;
         }
 
         private string GetUwpProcessTitle()
