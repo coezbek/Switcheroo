@@ -256,7 +256,7 @@ namespace Switcheroo
 
         private void SetUpNotifyIcon()
         {
-            var icon = Properties.Resources.icon;
+            var icon = new System.Drawing.Icon(Properties.Resources.icon, System.Windows.Forms.SystemInformation.SmallIconSize);
 
             var runOnStartupMenuItem = new MenuItem("Run on Startup", (s, e) => RunOnStartup(s as MenuItem))
             {
@@ -537,6 +537,15 @@ namespace Switcheroo
             }
             long tCenter = sw.ElapsedMilliseconds;
 
+            // Fix: Reset scroll position to top (0) for all visible lists using ScrollViewer
+            foreach (var lb in _listBoxes)
+            {
+                if (lb.Visibility == Visibility.Visible)
+                {
+                    GetScrollViewer(lb)?.ScrollToTop();
+                }
+            }
+            
             var currentListBox = _visibleListBoxes[_activeColumnIndex];
             if (currentListBox.SelectedIndex > 0)
             {
@@ -556,6 +565,18 @@ namespace Switcheroo
             //                   $"  ClearAndFocus: {tClearAndFocus - tPrevItem}\n" +
             //                   $"  Center: {tCenter - tClearAndFocus}\n" +
             //                   $"  Scroll: {tScroll - tCenter}");
+        }
+
+        private static System.Windows.Controls.ScrollViewer GetScrollViewer(System.Windows.DependencyObject o)
+        {
+            if (o is System.Windows.Controls.ScrollViewer sv) return sv;
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(o); i++)
+            {
+                var child = VisualTreeHelper.GetChild(o, i);
+                var result = GetScrollViewer(child);
+                if (result != null) return result;
+            }
+            return null;
         }
 
         private static bool AreWindowsRelated(SystemWindow window1, SystemWindow window2)
@@ -583,13 +604,15 @@ namespace Switcheroo
 
             if (_activeColumnIndex >= 0 && _activeColumnIndex < _visibleListBoxes.Count)
             {
-                _visibleListBoxes[_activeColumnIndex].Background = Brushes.Transparent;
+                // Revert to the default background defined in the XAML Style (ControlBackgroundBrush)
+                _visibleListBoxes[_activeColumnIndex].ClearValue(System.Windows.Controls.Control.BackgroundProperty);
             }
 
             _activeColumnIndex = visibleIndex;
             var currentListBox = _visibleListBoxes[_activeColumnIndex];
 
-            currentListBox.Background = Brushes.AliceBlue;
+            // Use the HighlightBrush from the current theme
+            currentListBox.SetResourceReference(System.Windows.Controls.Control.BackgroundProperty, "HighlightBrush");
 
             if (currentListBox.Items.Count > 0)
             {

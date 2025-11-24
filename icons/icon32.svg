@@ -1,0 +1,40 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  
+  <defs>
+    <!-- Your exact trace data. 
+         We define it here once so we can reuse it 3 times. -->
+    <path id="window-shape" 
+          d="m 41.615073,112.28803 27.541333,-3.94473 c 2.81265,-0.40286 5.206809,2.28851 5.128796,5.1288 l -0.508997,18.53156 c -0.07801,2.84028 -2.287443,5.12879 -5.128796,5.12879 H 41.615073 c -2.841353,0 -5.128796,-2.28744 -5.128796,-5.12879 v -14.58683 c 0,-2.84136 2.316147,-4.72595 5.128796,-5.1288 z" />
+  </defs>
+
+  <!-- Background Tile (Centered White Square) -->
+  <rect x="1" y="1" width="30" height="30" rx="4" fill="#ffffff" stroke="none"/>
+
+  <!-- Note on Transformations:
+       1. Scale(0.43): Shrinks your ~37px wide shape down to ~16px.
+       2. Translate: Moves the shape to the correct spot on the grid.
+       3. Stroke-Width(4.65): Since we scaled down by ~0.43, we need a 
+          thicker stroke (4.65px) so the result equals exactly 2px visible stroke. -->
+
+  <!-- Back Window (Cyan) -->
+  <g transform="translate(-3.7 -41) scale(0.43)">
+    <path d="m 41.615073,112.28803 27.541333,-3.94473 c 2.81265,-0.40286 5.206809,2.28851 5.128796,5.1288 l -0.508997,18.53156 c -0.07801,2.84028 -2.287443,5.12879 -5.128796,5.12879 H 41.615073 c -2.841353,0 -5.128796,-2.28744 -5.128796,-5.12879 v -14.58683 c 0,-2.84136 2.316147,-4.72595 5.128796,-5.1288 z" 
+          fill="#ffffff" stroke="#25aae1" stroke-width="4.65" stroke-linejoin="round" stroke-linecap="round"/>
+  </g>
+
+  <!-- Middle Window (Mid Blue) -->
+  <!-- Transformed: Shifted Left/Down -->
+  <g transform="translate(-7.7 -36) scale(0.43)">
+    <path d="m 41.615073,112.28803 27.541333,-3.94473 c 2.81265,-0.40286 5.206809,2.28851 5.128796,5.1288 l -0.508997,18.53156 c -0.07801,2.84028 -2.287443,5.12879 -5.128796,5.12879 H 41.615073 c -2.841353,0 -5.128796,-2.28744 -5.128796,-5.12879 v -14.58683 c 0,-2.84136 2.316147,-4.72595 5.128796,-5.1288 z" 
+          fill="#ffffff" stroke="#0f75bc" stroke-width="4.65" stroke-linejoin="round" stroke-linecap="round"/>
+  </g>
+
+  <!-- Front Window (Dark Blue) -->
+  <!-- Transformed: Shifted Bottom-Left -->
+  <g transform="translate(-11.7 -31) scale(0.43)">
+    <path d="m 41.615073,112.28803 27.541333,-3.94473 c 2.81265,-0.40286 5.206809,2.28851 5.128796,5.1288 l -0.508997,18.53156 c -0.07801,2.84028 -2.287443,5.12879 -5.128796,5.12879 H 41.615073 c -2.841353,0 -5.128796,-2.28744 -5.128796,-5.12879 v -14.58683 c 0,-2.84136 2.316147,-4.72595 5.128796,-5.1288 z" 
+          fill="#ffffff" stroke="#283991" stroke-width="4.65" stroke-linejoin="round" stroke-linecap="round"/>
+  </g>
+
+
+</svg>
