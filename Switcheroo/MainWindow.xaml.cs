@@ -1230,7 +1230,6 @@ namespace Switcheroo
                 }
                 else
                 {
-                    // Expensive operations (Highlighting) now only run on the limited set
                     filterResult.AppWindow.FormattedTitle = GetFormattedTitleFromBestResult(filterResult.WindowTitleMatchResults);
                 }
                 filterResult.AppWindow.FormattedProcessTitle = GetFormattedTitleFromBestResult(filterResult.ProcessTitleMatchResults);
