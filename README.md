@@ -11,6 +11,8 @@ Switcheroo++ is a fork of [Regin Larsen's Switcheroo](https://github.com/kvakulo
 
 <img src="screenshot.png" alt="Screenshot of Switcheroo in action" width="1500px" height="477px">
 
+<img src="screenshot-darkmode.png" alt="Darkmode of Switcheroo in action" width="1250px" height="611px">
+
 ## Download
 
 **[Download Switcheroo here](https://github.com/coezbek/Switcheroo/releases)**
@@ -50,7 +52,7 @@ Switcheroo displays windows in five columns:
 
 ## Todo List
 
-- [ ] Dark mode screenshot in README
+- [x] Dark mode screenshot in README
 - [ ] Support for Virtual Desktops
 - [ ] Assign shortcut - https://github.com/elig0n/Switcheroo/issues/30
 - [ ] Tagging windows - https://github.com/kvakulo/Switcheroo/issues/174
