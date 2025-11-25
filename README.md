@@ -51,8 +51,6 @@ Switcheroo displays windows in five columns:
 
 ## Todo List
 
-- [x] Dark mode screenshot in README
-- [x] Alt+p to anonymize window titles for screenhots/demos/privacy
 - [ ] Support for Virtual Desktops
 - [ ] Assign shortcut - https://github.com/elig0n/Switcheroo/issues/30
 - [ ] Tagging windows - https://github.com/kvakulo/Switcheroo/issues/174
@@ -61,6 +59,14 @@ Switcheroo displays windows in five columns:
 - [ ] Allow to highlight some of the windows based on regex rules.
 - [ ] Fix update checker
 - [ ] Proper logging/crash reporting
+
+## New features in Version 0.9.7
+
+- [x] Alt+p to anonymize window titles for screenhots/demos/privacy
+- [x] Slight corner radius and shadow for the main window
+- [x] Keyboard support in options menu
+- [x] When closing window which asks for feedback, activate it.
+- [x] Fix: Pinning doesn't mess up current columns/filtering.
 
 ## New Features in Version 0.9.6
 
