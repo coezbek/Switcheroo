@@ -258,7 +258,7 @@ namespace Switcheroo
         {
             var icon = new System.Drawing.Icon(Properties.Resources.icon, System.Windows.Forms.SystemInformation.SmallIconSize);
 
-            var runOnStartupMenuItem = new MenuItem("Run on Startup", (s, e) => RunOnStartup(s as MenuItem))
+            var runOnStartupMenuItem = new MenuItem("Run on &Startup", (s, e) => RunOnStartup(s as MenuItem))
             {
                 Checked = new AutoStart().IsEnabled
             };
@@ -270,10 +270,10 @@ namespace Switcheroo
                 Visible = true,
                 ContextMenu = new System.Windows.Forms.ContextMenu(new[]
                 {
-                    new MenuItem("Options", (s, e) => Options()),
+                    new MenuItem("&Options", (s, e) => Options()),
                     runOnStartupMenuItem,
-                    new MenuItem("About", (s, e) => About()),
-                    new MenuItem("Exit", (s, e) => Quit())
+                    new MenuItem("&About", (s, e) => About()),
+                    new MenuItem("E&xit", (s, e) => Quit())
                 })
             };
         }
