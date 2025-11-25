@@ -90,7 +90,7 @@
                     </TextBlock>
                 </StackPanel>
             </DockPanel>
-            <Grid DockPanel.Dock="Top">
+            <Grid DockPanel.Dock="Top" PreviewMouseDown="SearchBoxContainer_PreviewMouseDown">
                 <TextBox Name="tb" Padding="5" VerticalAlignment="Top" TextChanged="TextChanged" FontSize="15"
                          VerticalContentAlignment="Center" Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource PrimaryTextBrush}">
                     <TextBox.InputBindings>

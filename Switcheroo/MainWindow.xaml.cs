@@ -378,34 +378,50 @@ namespace Switcheroo
 
         private void LoadData(InitialFocus focus, MonitorInfo monitor)
         {
-            // Cache the monitor for future reloads (when window is already visible)
+            bool isReload = this.IsVisible;
+
+            // FIX: Robustly handle null monitor (e.g. context menu usage)
+            if (monitor == null)
+            {
+                monitor = _currentMonitor ?? MonitorHelper.GetMonitorFromCursor();
+            }
+
+            // Cache for future reloads
             if (monitor != null)
             {
                 _currentMonitor = monitor;
-                // Console.WriteLine($"[DEBUG] LoadData: Caching monitor with DPI={monitor.DpiScale:F2}");
             }
-            else
+
+            // 1. Capture State for ALL ListBoxes (Selection & Index)
+            var selectionState = new Dictionary<int, IntPtr>();
+            var indexState = new Dictionary<int, int>();
+
+            if (isReload)
             {
-                monitor = _currentMonitor;
-                // Console.WriteLine($"[DEBUG] LoadData: Using cached monitor with DPI={(monitor?.DpiScale.ToString("F2") ?? "null")}");
+                for (int i = 0; i < _listBoxes.Count; i++)
+                {
+                    if (_listBoxes[i].SelectedItem is AppWindowViewModel vm)
+                    {
+                        selectionState[i] = vm.HWnd;
+                        indexState[i] = _listBoxes[i].SelectedIndex;
+                    }
+                }
+            }
+
+            // Capture which ListBox instance was active
+            System.Windows.Controls.ListBox activeListBoxInstance = null;
+            if (_visibleListBoxes.Count > 0 && _activeColumnIndex >= 0 && _activeColumnIndex < _visibleListBoxes.Count)
+            {
+                activeListBoxInstance = _visibleListBoxes[_activeColumnIndex];
             }
 
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
-            // 1. Fetch Windows
+            // 2. Fetch Windows
             _unfilteredWindowList = new WindowFinder().GetWindows().Select(window => new AppWindowViewModel(window)).ToList();
 
-            long tWindowFinder = sw.ElapsedMilliseconds;
-
+            // The foreground window stays at the top (Index 0)
             var firstWindow = _unfilteredWindowList.FirstOrDefault();
-            bool foregroundWindowMovedToBottom = false;
-
-            if (firstWindow != null && _foregroundWindow != null && AreWindowsRelated(firstWindow.AppWindow, _foregroundWindow))
-            {
-                _unfilteredWindowList.RemoveAt(0);
-                _unfilteredWindowList.Add(firstWindow);
-                foregroundWindowMovedToBottom = true;
-            }
 
             TitleFormatter.FormatTitlesForDisplay(_unfilteredWindowList);
 
@@ -491,9 +507,7 @@ namespace Switcheroo
 
             long tWindowCloser = sw.ElapsedMilliseconds;
 
-            // OPTIMIZATION: Bulk Assign to UI.
-            // This triggers ONE "Reset" event per list, instead of N "Add" events.
-            // This solves the 100ms lag in SetActiveColumn/Focus/Clear.
+            // This was slightly faster than adding them individually and relying on ObservableCollection's notifications.
             _listLeft1 = new ObservableCollection<AppWindowViewModel>(tmpLeft1);
             ListBoxLeft1.ItemsSource = _listLeft1;
 
@@ -509,62 +523,121 @@ namespace Switcheroo
             _listRight = new ObservableCollection<AppWindowViewModel>(tmpRight);
             ListBoxRight.ItemsSource = _listRight;
 
-            long tAssignListBoxes = sw.ElapsedMilliseconds;
-
-            int centerIndex = _listBoxes.IndexOf(ListBoxCenter);
-            
-            SetActiveColumn(centerIndex, focus, false);
-            long tActiveColumn = sw.ElapsedMilliseconds;
-
-            if (foregroundWindowMovedToBottom && focus == InitialFocus.PreviousItem)
-            {
-                PreviousItem();
-            }
-            long tPrevItem = sw.ElapsedMilliseconds;
-
-            // Prevent recursive LoadData calls from TextChanged during Clear
-            tb.TextChanged -= TextChanged;
-            tb.Clear(); 
-            tb.TextChanged += TextChanged;
-            
-            tb.Focus();
-
-            long tClearAndFocus = sw.ElapsedMilliseconds;
-
             if (monitor != null)
             {
                 CenterWindow(monitor);
             }
-            long tCenter = sw.ElapsedMilliseconds;
 
-            // Fix: Reset scroll position to top (0) for all visible lists using ScrollViewer
-            foreach (var lb in _listBoxes)
+            // Restore searching state
+            bool isSearching = isReload && !string.IsNullOrEmpty(tb.Text) && tb.IsEnabled;
+
+            if (isSearching)
             {
-                if (lb.Visibility == Visibility.Visible)
+                Console.WriteLine("Restoring search filter: " + tb.Text);
+                FilterList(tb.Text);
+            }
+            else
+            {
+                // Reset placeholder / Clear text logic
+                tb.TextChanged -= TextChanged;
+                if (_altTabAutoSwitch)
                 {
-                    GetScrollViewer(lb)?.ScrollToTop();
+                    tb.Text = "Press Alt + S to search";
+                }
+                else
+                {
+                    tb.Clear();
+                }
+                tb.TextChanged += TextChanged;
+
+                if (tb.IsEnabled) tb.Focus();
+            }
+
+            // 3. Restore Selection for ALL columns
+            for (int i = 0; i < _listBoxes.Count; i++)
+            {
+                var lb = _listBoxes[i];
+                var collection = lb.ItemsSource as ObservableCollection<AppWindowViewModel>;
+                
+                // Skip if empty (Layout update above will have collapsed it, but just in case)
+                if (collection == null || collection.Count == 0) continue;
+
+                bool restored = false;
+
+                // Try to find exact HWnd match
+                if (selectionState.TryGetValue(i, out IntPtr hwnd))
+                {
+                    var match = collection.FirstOrDefault(w => w.HWnd == hwnd);
+                    if (match != null)
+                    {
+                        lb.SelectedItem = match;
+                        restored = true;
+                    }
+                }
+
+                // If exact match failed (item moved columns) AND we are just reloading (Pin/Unpin):
+                // Keep the selection at the same index so the list doesn't look empty/reset.
+                if (!restored && isReload)
+                {
+                    if (indexState.TryGetValue(i, out int oldIndex))
+                    {
+                        int newIndex = Math.Min(oldIndex, collection.Count - 1);
+                        lb.SelectedIndex = Math.Max(0, newIndex);
+                    }
                 }
             }
-            
-            var currentListBox = _visibleListBoxes[_activeColumnIndex];
-            if (currentListBox.SelectedIndex > 0)
+
+            // 4. Determine Active Column & Focus
+            int newActiveIndex = -1;
+
+            if (isReload)
             {
-                ScrollSelectedItemIntoView();
+                // Try to keep the same listbox active if it is still visible
+                if (activeListBoxInstance != null && activeListBoxInstance.Visibility == Visibility.Visible)
+                {
+                    newActiveIndex = _listBoxes.IndexOf(activeListBoxInstance);
+                }
+                else
+                {
+                    // Fallback to Center if the active column disappeared (e.g. Unpinned last item in Right)
+                    newActiveIndex = _listBoxes.IndexOf(ListBoxCenter);
+                }
+            }
+            else
+            {
+                // Fresh Open (Alt-Tab): Always activate Center
+                newActiveIndex = _listBoxes.IndexOf(ListBoxCenter);
+
+                // FIX: Start at 2nd position (Index 1) for Alt-Tab (NextItem)
+                // This keeps current window at Index 0, and selects the "previous" window at Index 1.
+                if (ListBoxCenter.Items.Count > 1 && focus == InitialFocus.NextItem)
+                {
+                    ListBoxCenter.SelectedIndex = 1;
+                }
+                else if (ListBoxCenter.Items.Count > 0)
+                {
+                    // Shift+Tab -> Wrap to bottom; otherwise Top.
+                    ListBoxCenter.SelectedIndex = (focus == InitialFocus.PreviousItem) 
+                        ? ListBoxCenter.Items.Count - 1 
+                        : 0;
+                }
             }
 
-            long tScroll = sw.ElapsedMilliseconds;
-            // Console.WriteLine($"[DEBUG] LoadData timings (ms):\n" +
-            //                   $"  WindowFinder: {tWindowFinder}\n" +
-            //                   $"  Grouping: {tGrouping - tWindowFinder}\n" +
-            //                   $"  AppColumns: {tAppColumns - tGrouping}\n" +
-            //                   $"  WindowToColumnAssignment: {tWindowToColumnAssignment - tAppColumns}\n" +
-            //                   $"  WindowCloser: {tWindowCloser - tWindowToColumnAssignment}\n" +
-            //                   $"  AssignListBoxes: {tAssignListBoxes - tWindowCloser}\n" +
-            //                   $"  ActiveColumn: {tActiveColumn - tAssignListBoxes}\n" +
-            //                   $"  PrevItem: {tPrevItem - tActiveColumn}\n" +
-            //                   $"  ClearAndFocus: {tClearAndFocus - tPrevItem}\n" +
-            //                   $"  Center: {tCenter - tClearAndFocus}\n" +
-            //                   $"  Scroll: {tScroll - tCenter}");
+            // Activate the calculated column
+            SetActiveColumn(newActiveIndex, focus, false);
+
+            // Ensure the active item is visible
+            var currentActive = _visibleListBoxes[_activeColumnIndex];
+            if (currentActive.SelectedItem != null)
+            {
+                currentActive.ScrollIntoView(currentActive.SelectedItem);
+            }
+
+            // Prevent recursive LoadData calls from TextChanged during Clear
+            // tb.TextChanged -= TextChanged;
+            // tb.Clear();
+            // tb.TextChanged += TextChanged;
+            // tb.Focus();
         }
 
         private static System.Windows.Controls.ScrollViewer GetScrollViewer(System.Windows.DependencyObject o)
@@ -1035,6 +1108,19 @@ namespace Switcheroo
             }
         }
 
+        private void SearchBoxContainer_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            // If the box is disabled (Alt-Tab mode), activate it
+            if (!tb.IsEnabled)
+            {
+                _altTabAutoSwitch = false;
+                tb.IsEnabled = true;
+                tb.Text = ""; // Clear the placeholder
+                tb.Focus();
+                e.Handled = true;
+            }
+        }
+
         private void hotkey_HotkeyPressed(object sender, EventArgs e)
         {
             if (!Settings.Default.EnableHotKey)
@@ -1192,6 +1278,11 @@ namespace Switcheroo
                 return;
             }
 
+            FilterList(tb.Text);
+        }
+
+        private void FilterList(string query)
+        {
             // During search, we only modify the center list.
             _listCenter.Clear();
 
@@ -1203,8 +1294,6 @@ namespace Switcheroo
             {
                 SetActiveColumn(centerIndex);
             }
-
-            var query = tb.Text;
 
             var context = new WindowFilterContext<AppWindowViewModel>
             {
@@ -1236,9 +1325,9 @@ namespace Switcheroo
                 _listCenter.Add(filterResult.AppWindow);
             }
 
-            if (ListBoxCenter.Items.Count > 0)
+            if (ListBoxCenter.Items.Count > 0 && ListBoxCenter.SelectedIndex == -1)
             {
-                ListBoxCenter.SelectedItem = ListBoxCenter.Items[0];
+                ListBoxCenter.SelectedIndex = 0;
             }
         }
 
