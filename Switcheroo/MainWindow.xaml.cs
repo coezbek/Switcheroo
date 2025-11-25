@@ -1426,6 +1426,7 @@ namespace Switcheroo
             }
 
             // 3. Sequentially attempt to close the windows.
+            bool anyFailed = false;
             foreach (var win in windowsToClose.ToList()) // Use ToList() to create a copy, avoiding collection modification issues.
             {
                 bool isClosed = await _windowCloser.TryCloseAsync(win);
@@ -1433,9 +1434,18 @@ namespace Switcheroo
                 {
                     RemoveWindowFromAllLists(win);
                 }
-                else if (abortOnFailure)
+                else
                 {
-                    break; // Stop the entire operation if one window fails to close.
+                    // If this is the first failure, we should activate the window to bring it to the user's attention.
+                    if (!anyFailed)
+                    {
+                        anyFailed = true;
+                        win.AppWindow.SwitchToLastVisibleActivePopup();
+                    }
+                    if (abortOnFailure)
+                    {
+                        break; // Stop the entire operation if one window fails to close.
+                    }
                 }
             }
 
