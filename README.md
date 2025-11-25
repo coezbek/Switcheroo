@@ -9,9 +9,7 @@ Switcheroo++ is a fork of [Regin Larsen's Switcheroo](https://github.com/kvakulo
 
 ## Screenshot
 
-<img src="icons/screenshot.png" alt="Screenshot of Switcheroo in action" width="1500px" height="477px">
-
-<img src="icons/screenshot-darkmode.png" alt="Darkmode of Switcheroo in action" width="1250px" height="611px">
+<img src="icons/screenshot-darkmode.png" alt="Darkmode of Switcheroo in action" width="1198px" height="649px">
 
 ## Download
 
