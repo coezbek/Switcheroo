@@ -10,6 +10,10 @@
         Background="Transparent" KeyDown="MainWindow_KeyDown"
         PreviewMouseWheel="MainWindow_PreviewMouseWheel"
         >
+    
+    <Window.Effect>
+        <DropShadowEffect Color="Gray" BlurRadius="5" Direction="-90" ShadowDepth="0"/>
+    </Window.Effect>
 
     <Window.CommandBindings>
         <CommandBinding Command="local:MainWindow.CloseWindowCommand"
@@ -53,7 +57,7 @@
         <local:WindowHandleToCachedIconConverter x:Key="WindowHandleToCachedIconConverter" />
     </Window.Resources>
 
-    <Border Padding="3" Background="{DynamicResource WindowBackgroundBrush}" BorderBrush="{DynamicResource WindowBorderBrush}" BorderThickness="1" Name="Border">
+    <Border CornerRadius="5" Padding="3" Background="{DynamicResource WindowBackgroundBrush}" BorderBrush="{DynamicResource WindowBorderBrush}" BorderThickness="0" Name="Border" Margin="15,15,15,15">
         <DockPanel LastChildFill="True">
             <DockPanel Margin="4,0,4,0" Name="HelpPanel" Background="Transparent" Height="0" DockPanel.Dock="Top">
                 <TextBlock FontSize="10" DockPanel.Dock="Left" Foreground="{DynamicResource PrimaryTextBrush}">
