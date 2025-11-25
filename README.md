@@ -32,6 +32,7 @@ Cycle most common apps         | `Alt + ~`         |
 Keep Switcheroo open           | `Ctrl`            | Hold while releasing `Alt` to keep Switcheroo open if in `_altTabAutoSwitch` mode.
 Launch Explorer                | `Alt + E`         | Opens a new File Explorer window.
 Launch current process         | `Alt + N`         | Launches a new instance of the currently selected window's process.
+Anonymize window titles        | `Alt + P`         | Toggles anonymization of window titles for privacy during screen sharing or screenshots.
 
 ### Mouse Usage
 
@@ -51,6 +52,7 @@ Switcheroo displays windows in five columns:
 ## Todo List
 
 - [x] Dark mode screenshot in README
+- [x] Alt+p to anonymize window titles for screenhots/demos/privacy
 - [ ] Support for Virtual Desktops
 - [ ] Assign shortcut - https://github.com/elig0n/Switcheroo/issues/30
 - [ ] Tagging windows - https://github.com/kvakulo/Switcheroo/issues/174

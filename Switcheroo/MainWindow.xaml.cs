@@ -940,6 +940,21 @@ namespace Switcheroo
             // The actual key pressed, ignoring modifiers. This is important for system keys like Alt+Left.
             var key = (e.Key == Key.System) ? e.SystemKey : e.Key;
 
+            // Toggle Anonymization with Alt + P
+            if (key == Key.P && Keyboard.Modifiers.HasFlag(ModifierKeys.Alt))
+            {
+                 TitleFormatter.Anonymize = !TitleFormatter.Anonymize;
+                 TitleFormatter.FormatTitlesForDisplay(_unfilteredWindowList);
+                 
+                 // Refresh search results if active
+                 if (!string.IsNullOrEmpty(tb.Text))
+                 {
+                     TextChanged(tb, null);
+                 }
+                 e.Handled = true;
+                 return;
+            }
+
             // Alt+~ to rotate backwards through center and left columns
             if (Keyboard.Modifiers == ModifierKeys.Alt && key == Key.OemTilde)
             {
@@ -1209,8 +1224,15 @@ namespace Switcheroo
 
             foreach (var filterResult in filterResults)
             {
-                // Expensive operations (Highlighting) now only run on the limited set
-                filterResult.AppWindow.FormattedTitle = GetFormattedTitleFromBestResult(filterResult.WindowTitleMatchResults);
+                if (TitleFormatter.Anonymize)
+                {
+                    filterResult.AppWindow.FormattedTitle = TitleFormatter.GetFakeTitle(filterResult.AppWindow.HWnd.ToInt32());
+                }
+                else
+                {
+                    // Expensive operations (Highlighting) now only run on the limited set
+                    filterResult.AppWindow.FormattedTitle = GetFormattedTitleFromBestResult(filterResult.WindowTitleMatchResults);
+                }
                 filterResult.AppWindow.FormattedProcessTitle = GetFormattedTitleFromBestResult(filterResult.ProcessTitleMatchResults);
                 _listCenter.Add(filterResult.AppWindow);
             }
