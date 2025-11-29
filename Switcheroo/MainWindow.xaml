@@ -4,12 +4,14 @@
         xmlns:local="clr-namespace:Switcheroo"
         xmlns:system="clr-namespace:System;assembly=mscorlib"
         xmlns:core="clr-namespace:Switcheroo;assembly=Switcheroo.Core"
+        xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
         Closing="OnClose" ShowInTaskbar="False" WindowStyle="None" AllowsTransparency="True"
         SizeToContent="Manual"
         Title="" MinWidth="750" Deactivated="MainWindow_OnLostFocus" Loaded="MainWindow_OnLoaded"
         BorderBrush="Transparent" BorderThickness="1"
         Background="Transparent" KeyDown="MainWindow_KeyDown"
         PreviewMouseWheel="MainWindow_PreviewMouseWheel"
+        UseLayoutRounding="True"
         >
     
     <Window.Effect>
@@ -133,9 +135,227 @@
                 </TextBlock>
             </Grid>
 
-            <Grid Name="ColumnsGrid" DockPanel.Dock="Bottom" Margin="-1,3,-1,0">
+            <Grid Name="ColumnsGrid" DockPanel.Dock="Bottom" Margin="0,0,0,0">
                 <Grid.Resources>
+                    <local:HighlightStateConverter x:Key="HighlightStateConverter"/>
+
+                    <Style x:Key="CtxBtnStyle" TargetType="Button">
+                        <Setter Property="Width" Value="24"/>
+                        <Setter Property="Height" Value="24"/>
+                        <Setter Property="Margin" Value="2"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="BorderThickness" Value="1"/>
+                        <Setter Property="BorderBrush" Value="Transparent"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="3">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#888"/>
+                                            <Setter TargetName="Bd" Property="Background" Value="#22888888"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <!-- Active State Trigger -->
+                        <Style.Triggers>
+                            <DataTrigger Value="True">
+                                <DataTrigger.Binding>
+                                    <MultiBinding Converter="{StaticResource HighlightStateConverter}">
+                                        <!-- 1. The Button Tag (e.g. "Red") -->
+                                        <Binding RelativeSource="{RelativeSource Self}" Path="Tag" />
+                                        <!-- 2. The Brush Property (Triggers update when color changes) -->
+                                        <Binding Path="HighlightBackgroundBrush" />
+                                        <!-- 3. The Marker Property (Triggers update when icon changes) -->
+                                        <Binding Path="Marker" />
+                                    </MultiBinding>
+                                </DataTrigger.Binding>
+                                <!-- Visual for Active State: Solid Border + Slight Background -->
+                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryTextBrush}"/>
+                                <Setter Property="Background" Value="{DynamicResource ControlPressedBrush}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+
+                    <Style x:Key="CtxSeparatorStyle" TargetType="{x:Type Separator}">
+                        <Setter Property="Background" Value="{DynamicResource WindowBorderBrush}"/>
+                        <Setter Property="Height" Value="1"/>
+                        <Setter Property="Margin" Value="0,2,0,2"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="{x:Type Separator}">
+                                    <Border Background="{TemplateBinding Background}" Height="{TemplateBinding Height}"/>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+
+                    <ContextMenu x:Key="ListBoxItemContextMenu" KeyDown="ContextMenu_KeyDown" Foreground="{DynamicResource PrimaryTextBrush}" Background="{DynamicResource ControlBackgroundBrush}">
+                        <ContextMenu.Template>
+                            <ControlTemplate TargetType="ContextMenu">
+                                <Border Background="{TemplateBinding Background}"
+                                        BorderBrush="{DynamicResource WindowBorderBrush}"
+                                        BorderThickness="1"
+                                        Padding="2">
+                                    <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                                </Border>
+                            </ControlTemplate>
+                        </ContextMenu.Template>
+                        <ContextMenu.Resources>
+                            <Style TargetType="Separator" BasedOn="{StaticResource CtxSeparatorStyle}"/>
+                        </ContextMenu.Resources>
+
+                        <MenuItem Header="Switch" Click="ContextMenu_Switch" FontWeight="Bold" />
+                        <Separator />
+                        <MenuItem Header="Close" Click="ContextMenu_Close" />
+                        <MenuItem Header="Pin" Click="ContextMenu_PinUnpin" Tag="PinUnpin">
+                            <MenuItem.Icon>
+                                <TextBlock Text="&#xE718;" FontFamily="Segoe MDL2 Assets" FontSize="14" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator />
+
+                        <!-- Color Row -->
+                        <MenuItem StaysOpenOnClick="True">
+                             <MenuItem.Template>
+                                 <ControlTemplate>
+                                     <WrapPanel Orientation="Horizontal" Margin="30,0,5,5"
+                                                DataContext="{Binding DataContext, RelativeSource={RelativeSource TemplatedParent}}">
+
+                                        <Button Style="{StaticResource CtxBtnStyle}" Click="ContextMenu_Highlight_Change" Tag="Red" ToolTip="Highlight Window Class with Red">
+                                            <Ellipse Width="14" Height="14" Fill="Red" Stroke="Black" StrokeThickness="0.5"/>
+                                        </Button>
+                                         <Button Style="{StaticResource CtxBtnStyle}" Click="ContextMenu_Highlight_Change" Tag="Orange" ToolTip="Highlight Window Class with Orange">
+                                             <Ellipse Width="14" Height="14" Fill="Orange" Stroke="Black" StrokeThickness="0.5"/>
+                                         </Button>
+                                         <Button Style="{StaticResource CtxBtnStyle}" Click="ContextMenu_Highlight_Change" Tag="Green" ToolTip="Highlight Window Class with Green">
+                                             <Ellipse Width="14" Height="14" Fill="Green" Stroke="Black" StrokeThickness="0.5"/>
+                                         </Button>
+                                         <Button Style="{StaticResource CtxBtnStyle}" Click="ContextMenu_Highlight_Change" Tag="Blue" ToolTip="Highlight Window Class with Blue">
+                                             <Ellipse Width="14" Height="14" Fill="Blue" Stroke="Black" StrokeThickness="0.5"/>
+                                         </Button>
+                                         <Button Style="{StaticResource CtxBtnStyle}" Click="ContextMenu_Highlight_Change" Tag="Purple" ToolTip="Highlight Window Class with Purple">
+                                             <Ellipse Width="14" Height="14" Fill="Purple" Stroke="Black" StrokeThickness="0.5"/>
+                                         </Button>
+                                     </WrapPanel>
+                                 </ControlTemplate>
+                             </MenuItem.Template>
+                        </MenuItem>
+
+                        <!-- Symbol Row -->
+                        <MenuItem StaysOpenOnClick="True">
+                             <MenuItem.Template>
+                                 <ControlTemplate>
+                                     <WrapPanel Orientation="Horizontal" Margin="30,0,5,5"
+                                                DataContext="{Binding DataContext, RelativeSource={RelativeSource TemplatedParent}}">
+                                         <Button Style="{StaticResource CtxBtnStyle}" Click="ContextMenu_Highlight_Change" Tag="Flag" ToolTip="Highlight Window Class with Flag">
+                                             <emoji:TextBlock Text="🚩" FontSize="14"/>
+                                         </Button>
+                                         <Button Style="{StaticResource CtxBtnStyle}" Click="ContextMenu_Highlight_Change" Tag="Star" ToolTip="Highlight Window Class with Star">
+                                             <emoji:TextBlock Text="⭐" FontSize="14"/>
+                                         </Button>
+                                         <Button Style="{StaticResource CtxBtnStyle}" Click="ContextMenu_Highlight_Change" Tag="Warn" ToolTip="Highlight Window Class with Warning">
+                                             <emoji:TextBlock Text="⚠️" FontSize="14"/>
+                                         </Button>
+                                         <Button Style="{StaticResource CtxBtnStyle}" Click="ContextMenu_Highlight_Change" Tag="Fire" ToolTip="Highlight Window Class with Fire">
+                                             <emoji:TextBlock Text="🔥" FontSize="14"/>
+                                         </Button>
+                                         <Button Style="{StaticResource CtxBtnStyle}" Click="ContextMenu_HighlightConfigure" ToolTip="Configure">
+                                             <emoji:TextBlock Text="⚙️" FontSize="14"/>
+                                         </Button>
+                                     </WrapPanel>
+                                 </ControlTemplate>
+                             </MenuItem.Template>
+                        </MenuItem>
+
+                        <Separator />
+                        <MenuItem Header="Copy Window Title" Click="ContextMenu_CopyWindowTitle" />
+                        <MenuItem Header="Open File Location" Click="ContextMenu_OpenFileLocation" />
+                    </ContextMenu>
+
+                    <!--
+                        ITEM CONTAINER STYLE:
+                        Handles the BORDER and SELECTION background (Theme Blue).
+                        Also handles Mouse Hover borders.
+                    -->
+                    <Style x:Key="WindowItemContainerStyle" TargetType="{x:Type ListBoxItem}">
+                        <Setter Property="SnapsToDevicePixels" Value="True" />
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="VerticalContentAlignment" Value="Center" />
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="BorderThickness" Value="1" />
+                        <Setter Property="BorderBrush" Value="Transparent"/>
+
+                        <Setter Property="ContextMenu" Value="{StaticResource ListBoxItemContextMenu}" />
+                        <EventSetter Event="MouseDoubleClick" Handler="ListBoxItem_MouseDoubleClick" />
+                        <EventSetter Event="PreviewMouseLeftButtonUp" Handler="ListBoxItem_PreviewMouseLeftButtonUp" />
+                        <EventSetter Event="PreviewMouseDown" Handler="ListBoxItem_PreviewMouseDown" />
+                        <EventSetter Event="ContextMenuOpening" Handler="ListBoxItem_ContextMenuOpening" />
+
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                    <Border x:Name="Bd"
+                                            Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            Padding="{TemplateBinding Padding}"
+                                            SnapsToDevicePixels="true">
+                                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                          SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                    </Border>
+
+                                    <ControlTemplate.Triggers>
+                                        <!-- 1. MOUSE HOVER: Theme Border + Theme Background -->
+                                        <MultiTrigger>
+                                            <MultiTrigger.Conditions>
+                                                <Condition Property="IsMouseOver" Value="True" />
+                                                <Condition Property="IsSelected" Value="False" />
+                                            </MultiTrigger.Conditions>
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource WindowItemHoverBackgroundBrush}" />
+                                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource WindowItemHoverBorderBrush}" />
+                                        </MultiTrigger>
+
+                                        <!-- 2. SELECTED (Active): Theme Border + Theme Background -->
+                                        <MultiTrigger>
+                                            <MultiTrigger.Conditions>
+                                                <Condition Property="IsSelected" Value="True" />
+                                                <Condition Property="Selector.IsSelectionActive" Value="True" />
+                                            </MultiTrigger.Conditions>
+                                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource WindowItemSelectedBorderBrush}" />
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource WindowItemSelectedBackgroundBrush}" />
+                                        </MultiTrigger>
+
+                                        <!-- 3. SELECTED (Inactive): Theme Border + Theme Background -->
+                                        <MultiTrigger>
+                                            <MultiTrigger.Conditions>
+                                                <Condition Property="IsSelected" Value="True" />
+                                                <Condition Property="Selector.IsSelectionActive" Value="False" />
+                                            </MultiTrigger.Conditions>
+                                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource WindowItemSelectedBorderBrush}" />
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource WindowItemSelectedInactiveBackgroundBrush}" />
+                                        </MultiTrigger>
+
+                                        <!-- 4. DISABLED -->
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter TargetName="Bd" Property="Opacity" Value="0.5"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+
                     <Style x:Key="ColumnListBoxStyle" TargetType="{x:Type core:PerformanceListBox}">
+                        <Setter Property="ItemContainerStyle" Value="{StaticResource WindowItemContainerStyle}" />
                         <Setter Property="VirtualizingStackPanel.IsVirtualizing" Value="True"/>
                         <Setter Property="VirtualizingStackPanel.VirtualizationMode" Value="Recycling"/>
                         <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
@@ -143,15 +363,43 @@
                         <Setter Property="BorderThickness" Value="0"/>
                         <Setter Property="Padding" Value="0"/>
                         <Setter Property="MinWidth" Value="150"/>
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/> 
                         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
                         <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}"/>
                         <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
                     </Style>
 
+                    <!-- 
+                        DATA TEMPLATE:
+                        Handles the USER HIGHLIGHT (e.g. Red Background).
+                        This background sits *inside* the container border.
+                    -->
                     <DataTemplate x:Key="WindowItemTemplate">
-                        <DockPanel>
-                            <!-- Icon -->
-                            <Image DockPanel.Dock="Left" Height="32" Margin="3,0">
+                        <Grid>
+                            <!-- 
+                                Highlight Border: 
+                                - Shows User Highlight Color.
+                                - When selected, it shows the 'Solid' user color.
+                            -->
+                            <Border x:Name="HighlightBorder"
+                                    Background="{Binding HighlightBackgroundBrush}"
+                                    BorderThickness="0"
+                                    CornerRadius="0"
+                                    Margin="-1"
+                                    SnapsToDevicePixels="True"
+                                    IsHitTestVisible="False"/>
+
+                            <!-- Content -->
+                            <DockPanel Margin="4">
+                                <!-- Right-Aligned Marker -->
+                                <emoji:TextBlock DockPanel.Dock="Right"
+                                           Text="{Binding Marker}"
+                                           VerticalAlignment="Center"
+                                           Margin="5,0,0,0"
+                                           FontSize="14"/>
+
+                                <!-- Icon -->
+                                <Image DockPanel.Dock="Left" Height="32" Width="32" Margin="0,0,6,0">
                                 <Image.Source>
                                     <PriorityBinding>
                                         <Binding Path="HWnd" Converter="{StaticResource WindowHandleToIconConverter}" IsAsync="True" />
@@ -176,16 +424,16 @@
                                 </Image.Style>
                             </Image>
 
-                            <StackPanel Margin="3,0">
+                            <StackPanel VerticalAlignment="Center">
                                 <!-- Main Title -->
                                 <TextBlock local:FormattedTextAttribute.FormattedText="{Binding Path=FormattedTitle}"
-                                           TextTrimming="CharacterEllipsis" TextWrapping="NoWrap">
+                                           TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"
+                                           FontSize="14"
+                                           Margin="0,0,0,2">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
-                                            <!-- Default Color from Theme -->
                                             <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
                                             <Style.Triggers>
-                                                <!-- If Closing, Switch to Faded Color from Theme -->
                                                 <DataTrigger Binding="{Binding IsBeingClosed}" Value="True">
                                                     <Setter Property="Foreground" Value="{DynamicResource FadedTextBrush}" />
                                                 </DataTrigger>
@@ -196,7 +444,7 @@
 
                                 <!-- Process Title -->
                                 <TextBlock local:FormattedTextAttribute.FormattedText="{Binding Path=FormattedProcessTitle}"
-                                           FontSize="10" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap">
+                                           FontSize="11" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
@@ -210,30 +458,19 @@
                                 </TextBlock>
                             </StackPanel>
                         </DockPanel>
+                        </Grid>
+                        
+                        <DataTemplate.Triggers>
+                            <!-- 
+                                When Selected, switch to the SOLID highlight brush so the user's color 
+                                remains visible and strong against the blue selection background.
+                            -->
+                            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}}" Value="True">
+                                <Setter TargetName="HighlightBorder" Property="Background" Value="{Binding HighlightSolidBrush}"/>
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
                     </DataTemplate>
 
-                    <ContextMenu x:Key="ListBoxItemContextMenu" KeyDown="ContextMenu_KeyDown">
-                        <MenuItem Header="Switch" Click="ContextMenu_Switch" FontWeight="Bold" />
-                        <Separator />
-                        <MenuItem Header="Close" Click="ContextMenu_Close" />
-                        <MenuItem Header="Pin" Click="ContextMenu_PinUnpin" Tag="PinUnpin">
-                            <MenuItem.Icon>
-                                <TextBlock Text="&#xE718;" FontFamily="Segoe MDL2 Assets" FontSize="14" />
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <Separator />
-                        <MenuItem Header="Copy Window Title" Click="ContextMenu_CopyWindowTitle" />
-                        <MenuItem Header="Open File Location" Click="ContextMenu_OpenFileLocation" />
-                    </ContextMenu>
-
-                    <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource {x:Type ListBoxItem}}">
-                        <Setter Property="Padding" Value="0,5" />
-                        <Setter Property="ContextMenu" Value="{StaticResource ListBoxItemContextMenu}" />
-                        <EventSetter Event="MouseDoubleClick" Handler="ListBoxItem_MouseDoubleClick" />
-                        <EventSetter Event="PreviewMouseLeftButtonUp" Handler="ListBoxItem_PreviewMouseLeftButtonUp" />
-                        <EventSetter Event="PreviewMouseDown" Handler="ListBoxItem_PreviewMouseDown" />
-                        <EventSetter Event="ContextMenuOpening" Handler="ListBoxItem_ContextMenuOpening" />
-                    </Style>
                 </Grid.Resources>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition x:Name="ColLeft1" Width="*" />

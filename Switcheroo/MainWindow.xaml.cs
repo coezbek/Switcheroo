@@ -41,6 +41,8 @@ using ManagedWinapi.Windows;
 using Microsoft.Toolkit.Uwp.Notifications;
 using Switcheroo.Core;
 using Switcheroo.Core.Matchers;
+using Switcheroo.Core.Highlighting;
+using Switcheroo.Highlighting;
 using Switcheroo.Properties;
 using System.Windows.Input;
 using System.Windows.Automation.Peers;
@@ -48,6 +50,7 @@ using Application = System.Windows.Application;
 using MenuItem = System.Windows.Forms.MenuItem;
 using MessageBox = System.Windows.MessageBox;
 using NotifyIcon = System.Windows.Forms.NotifyIcon;
+
 
 namespace Switcheroo
 {
@@ -72,6 +75,8 @@ namespace Switcheroo
         private SystemWindow _foregroundWindow;
         private bool _altTabAutoSwitch;
         private MonitorInfo _currentMonitor; // Cache the current monitor for reloads
+        private HighlightService _highlightService;
+        private HighlightConfigWindow _highlightConfigWindow;
 
         // New collections for each column
         private ObservableCollection<AppWindowViewModel> _listLeft1;
@@ -88,7 +93,17 @@ namespace Switcheroo
         public MainWindow()
         {
             InitializeComponent();
-            
+
+            // Initialize Highlight Service
+            _highlightService = new HighlightService();
+            _highlightService.RulesChanged += (s, e) =>
+            {
+                if (this.IsVisible)
+                {
+                    Dispatcher.Invoke(RefreshHighlights);
+                }
+            };
+
             _listLeft1 = new ObservableCollection<AppWindowViewModel>();
             _listLeft2 = new ObservableCollection<AppWindowViewModel>();
             _listLeft3 = new ObservableCollection<AppWindowViewModel>();
@@ -388,7 +403,6 @@ namespace Switcheroo
         {
             bool isReload = this.IsVisible;
 
-            // FIX: Robustly handle null monitor (e.g. context menu usage)
             if (monitor == null)
             {
                 monitor = _currentMonitor ?? MonitorHelper.GetMonitorFromCursor();
@@ -426,12 +440,22 @@ namespace Switcheroo
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
             // 2. Fetch Windows
-            _unfilteredWindowList = new WindowFinder().GetWindows().Select(window => new AppWindowViewModel(window)).ToList();
+            _unfilteredWindowList = new WindowFinder().GetWindows().Select(window =>
+            {
+                var vm = new AppWindowViewModel(window);
+                var rule = _highlightService.FindMatch(vm.ProcessTitle, vm.WindowTitle, window.ClassName);
+                vm.ApplyHighlight(rule, false);
+                return vm;
+            }).ToList();
+
+            long tFetch = sw.ElapsedMilliseconds;
 
             // The foreground window stays at the top (Index 0)
             var firstWindow = _unfilteredWindowList.FirstOrDefault();
 
             TitleFormatter.FormatTitlesForDisplay(_unfilteredWindowList);
+
+            long tFormat = sw.ElapsedMilliseconds;
 
             var tmpLeft1 = new List<AppWindowViewModel>();
             var tmpLeft2 = new List<AppWindowViewModel>();
@@ -531,10 +555,14 @@ namespace Switcheroo
             _listRight = new ObservableCollection<AppWindowViewModel>(tmpRight);
             ListBoxRight.ItemsSource = _listRight;
 
+            long tBinding = sw.ElapsedMilliseconds;
+
             if (monitor != null)
             {
                 CenterWindow(monitor);
             }
+
+            long tLayout = sw.ElapsedMilliseconds;
 
             // Restore searching state
             bool isSearching = isReload && !string.IsNullOrEmpty(tb.Text) && tb.IsEnabled;
@@ -636,6 +664,7 @@ namespace Switcheroo
 
             // Activate the calculated column
             SetActiveColumn(newActiveIndex, focus, false);
+
             long tAfterSetActiveColumn = sw.ElapsedMilliseconds;
 
             // Ensure the active item is visible
@@ -655,9 +684,11 @@ namespace Switcheroo
                                 $" AppColumns={tAppColumns - tGrouping}ms" +
                                 $" WindowToColumn={tWindowToColumnAssignment - tAppColumns}ms" +
                                 $" WindowCloser={tWindowCloser - tWindowToColumnAssignment}ms" +
+                                $" Binding={tBinding - tWindowCloser}ms" +
+                                $" Layout={tLayout - tBinding}ms" +
                                 $" SelectionRestore={tAfterSelection - tBeforeSelection}ms" +
                                 $" SetActiveColumn={tAfterSetActiveColumn - tBeforeSetActiveColumn}ms" +
-                                $" ScrollintoView={tScrollIntoView - tAfterSetActiveColumn}ms" +
+                                $" ScrollIntoView={tScrollIntoView - tAfterSetActiveColumn}ms" +
                                 $" Total={tScrollIntoView}ms");
             }
 #endif
@@ -708,8 +739,7 @@ namespace Switcheroo
             _activeColumnIndex = visibleIndex;
             var currentListBox = _visibleListBoxes[_activeColumnIndex];
 
-            // Use the HighlightBrush from the current theme
-            currentListBox.SetResourceReference(System.Windows.Controls.Control.BackgroundProperty, "HighlightBrush");
+            currentListBox.SetResourceReference(System.Windows.Controls.Control.BackgroundProperty, "ActiveColumnBrush");
 
             if (currentListBox.Items.Count > 0)
             {
@@ -1398,12 +1428,21 @@ namespace Switcheroo
                     // Find the Pin/Unpin menu item
                     foreach (var item in contextMenu.Items)
                     {
-                        if (item is System.Windows.Controls.MenuItem menuItem &&
-                            menuItem.Tag != null && menuItem.Tag.ToString() == "PinUnpin")
+                        if (item is System.Windows.Controls.MenuItem menuItem)
                         {
-                            bool isPinned = IsProcessPinned(window.ProcessTitle);
-                            menuItem.Header = isPinned ? "Unpin" : "Pin";
-                            break;
+                            // Update Pin/Unpin text
+                            if (menuItem.Tag != null && menuItem.Tag.ToString() == "PinUnpin")
+                            {
+                                bool isPinned = IsProcessPinned(window.ProcessTitle);
+                                menuItem.Header = isPinned ? "Unpin" : "Pin";
+                            }
+
+                            // Update Class Menu Header to show cleaned class name
+                            if (menuItem.Name == "MenuHighlightClassCustom")
+                            {
+                                string cleanName = CleanClassName(window.AppWindow.ClassName);
+                                menuItem.Header = $"Custom/Edit '{cleanName}'...";
+                            }
                         }
                     }
                 }
@@ -1734,6 +1773,8 @@ namespace Switcheroo
 
         private void MainWindow_OnLostFocus(object sender, EventArgs e)
         {
+            // If Config is open, MainWindow is already hidden via ContextMenu_HighlightConfigure.
+            // If Config is NOT open, we want to hide when user clicks away.
             HideWindow();
         }
 
@@ -2018,12 +2059,322 @@ namespace Switcheroo
             }
         }
 
+        private void RefreshHighlights()
+        {
+            if (_unfilteredWindowList == null) return;
+
+            // Iterate existing view models and re-evaluate rules only
+            foreach (var vm in _unfilteredWindowList)
+            {
+                // Re-match against the updated rules list
+                var rule = _highlightService.FindMatch(vm.ProcessTitle, vm.WindowTitle, vm.AppWindow.ClassName);
+                
+                // Update the properties (Brush/Marker) on the ViewModel
+                // Since these properties raise INotifyPropertyChanged, the UI updates instantly
+                vm.ApplyHighlight(rule);
+            }
+        }
+
+        private void ContextMenu_HighlightProcess_Custom(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.MenuItem menuItem && menuItem.DataContext is AppWindowViewModel window)
+            {
+                OpenHighlightDialog(MatchType.ProcessName, window.ProcessTitle, window.ProcessTitle);
+            }
+        }
+
+        private void ContextMenu_HighlightClass_Custom(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.MenuItem menuItem && menuItem.DataContext is AppWindowViewModel window)
+            {
+                string rawClass = window.AppWindow.ClassName;
+                string niceClass = CleanClassName(rawClass);
+
+                // Use niceClass for Name, but rawClass for Argument to ensure matching works
+                OpenHighlightDialog(MatchType.WindowClass, rawClass, "Class: " + niceClass);
+            }
+        }
+
+        private void OpenHighlightDialog(MatchType type, string argument, string defaultName)
+        {
+            // Check for existing to edit
+            var existing = _highlightService.Rules.FirstOrDefault(r =>
+                r.MatchType == type &&
+                string.Equals(r.Argument, argument, StringComparison.OrdinalIgnoreCase));
+
+            EnsureHighlightConfigWindow();
+
+            if (existing != null)
+            {
+                _highlightConfigWindow.SelectRule(existing);
+            }
+            else
+            {
+                // Pre-fill new rule
+                var newRule = new HighlightRule
+                {
+                    Name = defaultName,
+                    MatchType = type,
+                    Argument = argument,
+                    ColorHex = "#FFFF0000",
+                    Marker = "🚩"
+                };
+                _highlightConfigWindow.SetupNewRule(newRule);
+            }
+
+            // Use Show() instead of ShowDialog() to remain modeless
+            _highlightConfigWindow.Show();
+            _highlightConfigWindow.Activate();
+        }
+
+        private void ContextMenu_HighlightConfigure(object sender, RoutedEventArgs e)
+        {
+            EnsureHighlightConfigWindow();
+
+            // Try to select the active rule for this window if one exists
+            if (sender is FrameworkElement fe && fe.DataContext is AppWindowViewModel window)
+            {
+                var rule = _highlightService.FindMatch(window.ProcessTitle, window.WindowTitle, window.AppWindow.ClassName);
+                if (rule != null)
+                {
+                    _highlightConfigWindow.SelectRule(rule);
+                }
+                else
+                {
+                    // Create new class matcher rule with no color and symbol
+                    var newRule = new HighlightRule
+                    {
+                        Name = "Class: " + CleanClassName(window.AppWindow.ClassName),
+                        MatchType = MatchType.WindowClass,
+                        Argument = window.AppWindow.ClassName,
+                        ColorHex = "#00000000", // Transparent
+                        Marker = ""
+                    };
+                    _highlightConfigWindow.SetupNewRule(newRule);
+                }
+            }
+            
+            // Hide the main window so the Config window acts independently
+            HideWindow();
+            
+            _highlightConfigWindow.Show();
+            _highlightConfigWindow.Activate();
+            
+            // Close context menu manually
+            if (sender is System.Windows.Controls.Control ctrl)
+            {
+                var parent = FindParent<System.Windows.Controls.ContextMenu>(ctrl);
+                if (parent != null) parent.IsOpen = false;
+            }
+        }
+
+        // Unified Handler for Color/Marker changes
+        private void ContextMenu_Highlight_Change(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.Button btn && btn.DataContext is AppWindowViewModel window)
+            {
+                string tag = btn.Tag?.ToString();
+                
+                // 1. Find existing rule that matches this window
+                var rule = _highlightService.FindMatch(window.ProcessTitle, window.WindowTitle, window.AppWindow.ClassName);
+
+                if (rule != null)
+                {
+                    // Modify existing rule
+                    UpdateRule(rule, tag);
+                }
+                else
+                {
+                    // Create new Class rule
+                    string rawClass = window.AppWindow.ClassName;
+                    string cleanClass = CleanClassName(rawClass);
+                    AddNewRule("Class: " + cleanClass, MatchType.WindowClass, rawClass, tag);
+                }
+
+                // Close the Context Menu manually
+                var parent = FindParent<System.Windows.Controls.ContextMenu>(btn);
+                if (parent != null) parent.IsOpen = false;
+            }
+        }
+        
+        public static T FindParent<T>(DependencyObject child) where T : DependencyObject
+        {
+            DependencyObject parentObject = VisualTreeHelper.GetParent(child);
+            if (parentObject == null) return null;
+            T parent = parentObject as T;
+            if (parent != null) return parent;
+            return FindParent<T>(parentObject);
+        }
+
+        private void AddNewRule(string name, MatchType matchType, string argument, string tag)
+        {
+            var rule = new HighlightRule
+            {
+                Name = name,
+                MatchType = matchType,
+                Argument = argument,
+                ColorHex = Colors.Transparent.ToString(), 
+                Marker = ""
+            };
+            _highlightService.AddRule(rule);
+            UpdateRule(rule, tag);
+        }
+
+        private void UpdateRule(HighlightRule rule, string tag)
+        {
+            string newColorHex = null;
+            string newMarker = null;
+            bool isColorUpdate = false;
+            bool isMarkerUpdate = false;
+
+            switch (tag)
+            {
+                case "Red": newColorHex = Colors.Red.ToString(); isColorUpdate = true; break;
+                case "Orange": newColorHex = Colors.Orange.ToString(); isColorUpdate = true; break;
+                case "Green": newColorHex = Colors.Green.ToString(); isColorUpdate = true; break;
+                case "Blue": newColorHex = Colors.Blue.ToString(); isColorUpdate = true; break;
+                case "Purple": newColorHex = Colors.Purple.ToString(); isColorUpdate = true; break;
+                
+                case "Flag": newMarker = "🚩"; isMarkerUpdate = true; break;
+                case "Star": newMarker = "⭐"; isMarkerUpdate = true; break;
+                case "Warn": newMarker = "⚠️"; isMarkerUpdate = true; break;
+                case "Fire": newMarker = "🔥"; isMarkerUpdate = true; break;
+            }
+
+            if (isColorUpdate)
+            {
+                // Toggle logic: If same color, remove it
+                if (string.Equals(rule.ColorHex, newColorHex, StringComparison.OrdinalIgnoreCase))
+                    rule.ColorHex = Colors.Transparent.ToString();
+                else
+                    rule.ColorHex = newColorHex;
+            }
+            else if (isMarkerUpdate)
+            {
+                // Toggle logic: If same marker, remove it
+                if (string.Equals(rule.Marker, newMarker, StringComparison.Ordinal))
+                    rule.Marker = "";
+                else
+                    rule.Marker = newMarker;
+            }
+
+            // Cleanup if empty
+            bool hasColor = !string.IsNullOrEmpty(rule.ColorHex) && !rule.ColorHex.StartsWith("#00");
+            bool hasMarker = !string.IsNullOrEmpty(rule.Marker);
+
+            if (!hasColor && !hasMarker)
+            {
+                _highlightService.RemoveRule(rule);
+            }
+            else
+            {
+                _highlightService.SaveRules();
+            }
+        }
+
+        private void EnsureHighlightConfigWindow()
+        {
+            if (_highlightConfigWindow == null || !_highlightConfigWindow.IsLoaded)
+            {
+                _highlightConfigWindow = new HighlightConfigWindow(_highlightService);
+                _highlightConfigWindow.Closed += (s, e) => _highlightConfigWindow = null;
+            }
+        }
+
+        private static string CleanClassName(string className)
+        {
+            if (string.IsNullOrEmpty(className)) return "";
+
+            // Handle HwndWrapper[App.exe;;guid] -> App.exe
+            if (className.StartsWith("HwndWrapper[") && className.Contains(";;"))
+            {
+                try
+                {
+                    int start = "HwndWrapper[".Length;
+                    int end = className.IndexOf(";;", start);
+                    if (end > start)
+                    {
+                        return className.Substring(start, end - start);
+                    }
+                }
+                catch { }
+            }
+
+            return className;
+        }
+
         #endregion
 
         private enum InitialFocus
         {
             NextItem,
             PreviousItem
+        }
+    }
+
+    public class HighlightStateConverter : System.Windows.Data.IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            // Value[0]: The Button's Tag (string) e.g., "Red", "Flag"
+            // Value[1]: The HighlightBackgroundBrush (SolidColorBrush)
+            // Value[2]: The Marker (string)
+            
+            if (values.Length < 3 || values[0] == null)
+                return false;
+
+            string tag = values[0].ToString();
+            
+            // Extract current color from brush safely
+            Color currentColor = Colors.Transparent;
+            if (values[1] is SolidColorBrush brush)
+            {
+                currentColor = brush.Color;
+            }
+
+            string currentMarker = values[2] as string;
+
+            // Define expectations based on Tag
+            Color? targetColor = null;
+            string targetMarker = null;
+
+            try 
+            {
+                switch (tag)
+                {
+                    // Colors (Alpha 0x40 = 64)
+                    case "Red": targetColor = (Color)ColorConverter.ConvertFromString("#40FF0000"); break;
+                    case "Orange": targetColor = (Color)ColorConverter.ConvertFromString("#40FFA500"); break;
+                    case "Green": targetColor = (Color)ColorConverter.ConvertFromString("#40008000"); break;
+                    case "Blue": targetColor = (Color)ColorConverter.ConvertFromString("#400000FF"); break;
+                    case "Purple": targetColor = (Color)ColorConverter.ConvertFromString("#40800080"); break;
+                    
+                    // Symbols
+                    case "Flag": targetMarker = "🚩"; break;
+                    case "Star": targetMarker = "⭐"; break;
+                    case "Check": targetMarker = "✅"; break;
+                    case "Warn": targetMarker = "⚠️"; break;
+                    case "Fire": targetMarker = "🔥"; break;
+                }
+            }
+            catch { return false; }
+
+            // Comparison
+            if (targetColor.HasValue)
+            {
+                return currentColor == targetColor.Value;
+            }
+            if (targetMarker != null)
+            {
+                return string.Equals(currentMarker, targetMarker, StringComparison.Ordinal);
+            }
+
+            return false;
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new NotImplementedException();
         }
     }
 }

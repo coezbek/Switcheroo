@@ -9,6 +9,8 @@ namespace Switcheroo
     {
         public enum Mode { Light, Dark, System }
 
+        public static event EventHandler Changed;
+
         public static void Apply()
         {
             Mode mode = GetMode();
@@ -29,6 +31,8 @@ namespace Switcheroo
 
             // Add the new theme
             dicts.Add(new ResourceDictionary { Source = new Uri(dictUri, UriKind.Relative) });
+
+            Changed?.Invoke(null, EventArgs.Empty);
         }
 
         public static bool IsUsingDarkTheme()

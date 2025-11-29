@@ -239,5 +239,17 @@ namespace Switcheroo.Properties {
                 this["Theme"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string HighlightRules {
+            get {
+                return ((string)(this["HighlightRules"]));
+            }
+            set {
+                this["HighlightRules"] = value;
+            }
+        }
     }
 }

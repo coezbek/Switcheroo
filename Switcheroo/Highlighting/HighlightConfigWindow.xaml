@@ -1,0 +1,215 @@
+<Window x:Class="Switcheroo.Highlighting.HighlightConfigWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
+        Title="Highlight Configuration" Height="500" Width="700"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}">
+    <Window.Resources>
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style TargetType="Label">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        
+        <!-- Styled Action Button: Transparent background to respect Dark Mode -->
+        <Style x:Key="ActionButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Width" Value="35"/>
+            <Setter Property="Height" Value="35"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Padding" Value="0"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource ControlMouseOverBrush}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource WindowBorderBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <DataTemplate x:Key="ColorTemplate">
+            <StackPanel Orientation="Horizontal">
+                <Border Width="16" Height="16" CornerRadius="2" Margin="0,0,8,0" BorderThickness="1" BorderBrush="#888">
+                    <Border.Background>
+                        <SolidColorBrush Color="{Binding Color}"/>
+                    </Border.Background>
+                </Border>
+                <TextBlock Text="{Binding Name}"/>
+            </StackPanel>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid Margin="15">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="20"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Left Side: List and Ordering -->
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="Rules (Priority Order):" Margin="0,0,0,5" FontWeight="Bold"/>
+
+            <ListBox Name="RulesList"
+                     Grid.Row="1"
+                     DisplayMemberPath="Name"
+                     SelectionChanged="RulesList_SelectionChanged"
+                     Background="{DynamicResource ControlBackgroundBrush}"
+                     Foreground="{DynamicResource PrimaryTextBrush}"
+                     BorderBrush="{DynamicResource WindowBorderBrush}"
+                     BorderThickness="1"/>
+
+            <!-- Action Buttons -->
+            <Grid Grid.Row="2" Margin="0,10,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Add/Remove -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <Button Name="BtnAdd" Style="{StaticResource ActionButtonStyle}" Click="BtnAdd_Click" ToolTip="Add New Rule" Content="&#xE710;" FontSize="14" /> <!-- Add -->
+                    <Button Name="BtnRemove" Style="{StaticResource ActionButtonStyle}" Click="BtnRemove_Click" ToolTip="Delete Selected Rule" Content="&#xE74D;" FontSize="14" /> <!-- Delete -->
+                </StackPanel>
+
+                <!-- Move Up/Down -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button Name="BtnUp" Style="{StaticResource ActionButtonStyle}" Click="BtnUp_Click" ToolTip="Move Up" Content="&#xE70E;" FontSize="14" /> <!-- Up -->
+                    <Button Name="BtnDown" Style="{StaticResource ActionButtonStyle}" Click="BtnDown_Click" ToolTip="Move Down" Content="&#xE70D;" FontSize="14" /> <!-- Down -->
+                </StackPanel>
+            </Grid>
+        </Grid>
+
+        <!-- Right Side: Editor -->
+        <Grid Grid.Column="2" Name="EditorPanel" IsEnabled="False">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="20"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="20"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="80"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Text="Rule Properties" FontSize="18" FontWeight="SemiBold"/>
+
+            <!-- Name -->
+            <Label Grid.Row="2" Grid.Column="0" Content="Name:"/>
+            <TextBox Grid.Row="2" Grid.Column="1" Name="TxtName" Margin="0,0,0,8"/>
+
+            <!-- Type -->
+            <Label Grid.Row="3" Grid.Column="0" Content="Match:"/>
+            <ComboBox Grid.Row="3" Grid.Column="1" Name="CmbType" Margin="0,0,0,8" VerticalContentAlignment="Center" Height="28"/>
+
+            <!-- Pattern -->
+            <Label Grid.Row="4" Grid.Column="0" Content="Pattern:"/>
+            <TextBox Grid.Row="4" Grid.Column="1" Name="TxtPattern" ToolTip="Process Name, Window Class, or Regex"/>
+            <TextBlock Grid.Row="5" Grid.Column="1" Text="Matches are case-insensitive." FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Top"/>
+
+            <!-- Color -->
+            <Label Grid.Row="6" Grid.Column="0" Content="Color:"/>
+            <ComboBox Grid.Row="6" Grid.Column="1" Name="CmbColor" Margin="0,0,0,8" Height="28"
+                      SelectedValuePath="Hex"
+                      ItemTemplate="{StaticResource ColorTemplate}"
+                      VerticalContentAlignment="Center"/>
+
+            <!-- Marker -->
+            <Label Grid.Row="7" Grid.Column="0" Content="Marker:"/>
+            <Grid Grid.Row="7" Grid.Column="1" Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="48"/>
+                </Grid.ColumnDefinitions>
+                <Grid.Resources>
+                    <!-- Fix for Emoji.Wpf.TextBox not binding properties to internal RichTextBox -->
+                    <Style TargetType="{x:Type emoji:RichTextBox}">
+                        <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource WindowBorderBrush}"/>
+                        <Setter Property="BorderThickness" Value="1"/>
+                        <Setter Property="Padding" Value="2,4,2,0"/>
+                    </Style>
+                </Grid.Resources>
+                <emoji:TextBox Name="TxtMarker"
+                               Grid.Column="0"
+                               MaxLength="8"
+                               Height="35"
+                               VerticalContentAlignment="Center" 
+                               HorizontalContentAlignment="Center" 
+                               TextAlignment="Center" 
+                               FontSize="18" />
+            </Grid>
+
+            <!-- Emoji Palette -->
+            <Label Grid.Row="8" Grid.Column="0" Content="Icons:" VerticalAlignment="Top" Margin="0,5,0,0"/>
+            <WrapPanel Grid.Row="8" Grid.Column="1" Name="EmojiPanel" Orientation="Horizontal">
+                <WrapPanel.Resources>
+                    <Style TargetType="Button">
+                        <Setter Property="Width" Value="35"/>
+                        <Setter Property="Height" Value="35"/>
+                        <Setter Property="Margin" Value="0,0,4,4"/>
+                        <Setter Property="FontSize" Value="18"/>
+                        <Setter Property="FontFamily" Value="Segoe UI Emoji, Segoe UI Symbol"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="BorderBrush" Value="Transparent"/>
+                        <Setter Property="BorderThickness" Value="1"/>
+                        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="3">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="BorderBrush" Value="#888"/>
+                                            <Setter Property="Background" Value="{DynamicResource ControlMouseOverBrush}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </WrapPanel.Resources>
+                <!-- Selection of Emojis -->
+                <Button Click="Emoji_Click" ToolTip="Flag"><emoji:TextBlock Text="🚩"/></Button>
+                <Button Click="Emoji_Click" ToolTip="Star"><emoji:TextBlock Text="⭐"/></Button>
+                <Button Click="Emoji_Click" ToolTip="Warning"><emoji:TextBlock Text="⚠️"/></Button>
+                <Button Click="Emoji_Click" ToolTip="Fire"><emoji:TextBlock Text="🔥"/></Button>
+                <Button Click="Emoji_Click" ToolTip="Check"><emoji:TextBlock Text="✅"/></Button>
+                <Button Click="Emoji_Click" ToolTip="Cross"><emoji:TextBlock Text="❌"/></Button>
+            </WrapPanel>
+
+            <!-- Save -->
+            <Button Grid.Row="10" Grid.Column="1" Content="Save Changes" HorizontalAlignment="Right" Width="120" Height="30" Click="BtnSave_Click"/>
+        </Grid>
+    </Grid>
+</Window>

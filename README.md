@@ -52,12 +52,18 @@ Switcheroo displays windows in five columns:
 ## Todo List
 
 - [x] Performance improvements regarding UI Automation -> Disabled UIA access.
+- [x] Allow to highlight some of the windows based:
+  - [x] Highlight based on regex.
+  - [x] Highlight based on process name.
+  - [x] Highlight based on window title.
+  - [x] Set/unset item color for highlighting.
+  - [x] Set/unset icon for highlighting.
+  - [x] Prioritize rules based on order.
+- [ ] Tagging windows - https://github.com/kvakulo/Switcheroo/issues/174
 - [ ] Support for Virtual Desktops
 - [ ] Assign shortcut - https://github.com/elig0n/Switcheroo/issues/30
-- [ ] Tagging windows - https://github.com/kvakulo/Switcheroo/issues/174
 - [ ] Add option to disable stand-alone `ALT` keypress to switch to selected window. Currently this is enabled by default, but a bit surprising (see: https://github.com/kvakulo/Switcheroo/pull/128)
 - [ ] Theme support.
-- [ ] Allow to highlight some of the windows based on regex rules.
 - [ ] Fix update checker
 - [ ] Proper logging/crash reporting
 

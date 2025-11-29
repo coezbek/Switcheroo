@@ -18,20 +18,24 @@
     <SolidColorBrush x:Key="FadedTextBrush" Color="#606060" />
     <SolidColorBrush x:Key="HelpIconBrush" Color="#808080" />
 
-    <!-- Selection -->
-    <SolidColorBrush x:Key="HighlightBrush" Color="#2D2D30" />
-    <SolidColorBrush x:Key="HighlightBorderBrush" Color="#3F3F46" />
-    <SolidColorBrush x:Key="SelectionBackgroundBrush" Color="#403F3F46" />
+    <!-- Active Column -->
+    <SolidColorBrush x:Key="ActiveColumnBrush" Color="#2D2D30" />
+    
+    <!-- INTERACTION -->
+    <!-- Hover: BG Matches button hover + Lighter Border -->
+    <SolidColorBrush x:Key="WindowItemHoverBackgroundBrush" Color="#3E3E42" />
+    <SolidColorBrush x:Key="WindowItemHoverBorderBrush" Color="#6E6E6E" />
+
+    <!-- Selected: Dark Blue BG (fallback) + WHITE BORDER -->
+    <SolidColorBrush x:Key="WindowItemSelectedBackgroundBrush" Color="#094771" /> 
+    <SolidColorBrush x:Key="WindowItemSelectedBorderBrush" Color="#FFFFFF" />
+
+    <!-- Selected Inactive: Dark Grey BG + White Border -->
+    <SolidColorBrush x:Key="WindowItemSelectedInactiveBackgroundBrush" Color="#3F3F46" />
 
     <!-- System Overrides -->
     <SolidColorBrush x:Key="{x:Static SystemColors.WindowTextBrushKey}" Color="#F1F1F1" />
     <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey}" Color="#F1F1F1" />
-    <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="#1E1E1E" />
-    <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="#252526" />
-    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#403F3F46" />
-    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#F1F1F1" />
-    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#403F3F46" />
-    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#F1F1F1" />
 
     <!-- ScrollBar Style -->
     <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource DarkScrollBar}" />

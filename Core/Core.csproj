@@ -47,6 +47,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AppWindow.cs" />
+    <Compile Include="Highlighting\HighlightRule.cs" />
+    <Compile Include="Highlighting\HighlightMatcher.cs" />
     <Compile Include="IWindowText.cs" />
     <Compile Include="KeyboardHelper.cs" />
     <Compile Include="MonitorHelper.cs" />
