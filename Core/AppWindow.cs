@@ -37,6 +37,9 @@ namespace Switcheroo.Core
     /// </summary>
     public class AppWindow : SystemWindow
     {
+        // Cache the current process ID to avoid repeated lookups
+        // private static readonly int CurrentProcessId = Process.GetCurrentProcess().Id;
+
         // Helper to get PID without creating a heavy System.Diagnostics.Process object
         public int ProcessId
         {
@@ -171,6 +174,8 @@ namespace Switcheroo.Core
         public bool IsAltTabWindow()
         {
             if (!Visible) return false;
+            // I am not sure, if this would be helpful in any way:
+            // if (ProcessId == CurrentProcessId) return false;
             if (!HasWindowTitle()) return false;
             if (IsAppWindow()) return true;
             if (IsToolWindow()) return false;
