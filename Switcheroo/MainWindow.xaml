@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:Switcheroo"
         xmlns:system="clr-namespace:System;assembly=mscorlib"
+        xmlns:core="clr-namespace:Switcheroo;assembly=Switcheroo.Core"
         Closing="OnClose" ShowInTaskbar="False" WindowStyle="None" AllowsTransparency="True"
         SizeToContent="Manual"
         Title="" MinWidth="750" Deactivated="MainWindow_OnLostFocus" Loaded="MainWindow_OnLoaded"
@@ -134,7 +135,7 @@
 
             <Grid Name="ColumnsGrid" DockPanel.Dock="Bottom" Margin="-1,3,-1,0">
                 <Grid.Resources>
-                    <Style x:Key="ColumnListBoxStyle" TargetType="{x:Type ListBox}">
+                    <Style x:Key="ColumnListBoxStyle" TargetType="{x:Type core:PerformanceListBox}">
                         <Setter Property="VirtualizingStackPanel.IsVirtualizing" Value="True"/>
                         <Setter Property="VirtualizingStackPanel.VirtualizationMode" Value="Recycling"/>
                         <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
@@ -242,11 +243,11 @@
                     <ColumnDefinition x:Name="ColRight" Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <ListBox GotFocus="ListBox_GotFocus" Grid.Column="0" Name="ListBoxLeft1" Style="{StaticResource ColumnListBoxStyle}" ItemTemplate="{StaticResource WindowItemTemplate}" />
-                <ListBox GotFocus="ListBox_GotFocus" Grid.Column="1" Name="ListBoxLeft2" Style="{StaticResource ColumnListBoxStyle}" ItemTemplate="{StaticResource WindowItemTemplate}" />
-                <ListBox GotFocus="ListBox_GotFocus" Grid.Column="2" Name="ListBoxLeft3" Style="{StaticResource ColumnListBoxStyle}" ItemTemplate="{StaticResource WindowItemTemplate}" />
-                <ListBox GotFocus="ListBox_GotFocus" Grid.Column="3" Name="ListBoxCenter" Style="{StaticResource ColumnListBoxStyle}" ItemTemplate="{StaticResource WindowItemTemplate}" />
-                <ListBox GotFocus="ListBox_GotFocus" Grid.Column="4" Name="ListBoxRight" Style="{StaticResource ColumnListBoxStyle}" ItemTemplate="{StaticResource WindowItemTemplate}" />
+                <core:PerformanceListBox GotFocus="ListBox_GotFocus" Grid.Column="0" Name="ListBoxLeft1" Style="{StaticResource ColumnListBoxStyle}" ItemTemplate="{StaticResource WindowItemTemplate}" />
+                <core:PerformanceListBox GotFocus="ListBox_GotFocus" Grid.Column="1" Name="ListBoxLeft2" Style="{StaticResource ColumnListBoxStyle}" ItemTemplate="{StaticResource WindowItemTemplate}" />
+                <core:PerformanceListBox GotFocus="ListBox_GotFocus" Grid.Column="2" Name="ListBoxLeft3" Style="{StaticResource ColumnListBoxStyle}" ItemTemplate="{StaticResource WindowItemTemplate}" />
+                <core:PerformanceListBox GotFocus="ListBox_GotFocus" Grid.Column="3" Name="ListBoxCenter" Style="{StaticResource ColumnListBoxStyle}" ItemTemplate="{StaticResource WindowItemTemplate}" />
+                <core:PerformanceListBox GotFocus="ListBox_GotFocus" Grid.Column="4" Name="ListBoxRight" Style="{StaticResource ColumnListBoxStyle}" ItemTemplate="{StaticResource WindowItemTemplate}" />
 
             </Grid>
         </DockPanel>

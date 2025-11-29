@@ -31,6 +31,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
@@ -51,6 +52,7 @@
     <Compile Include="MonitorHelper.cs" />
     <Compile Include="WindowFilterer.cs" />
     <Compile Include="WindowFinder.cs" />
+    <Compile Include="MainWindowUtils.cs" />
     <Compile Include="Matchers\ContainsMatcher.cs" />
     <Compile Include="Matchers\IMatcher.cs" />
     <Compile Include="Matchers\IndividualCharactersMatcher.cs" />

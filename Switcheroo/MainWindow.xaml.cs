@@ -43,6 +43,7 @@ using Switcheroo.Core;
 using Switcheroo.Core.Matchers;
 using Switcheroo.Properties;
 using System.Windows.Input;
+using System.Windows.Automation.Peers;
 using Application = System.Windows.Application;
 using MenuItem = System.Windows.Forms.MenuItem;
 using MessageBox = System.Windows.MessageBox;
@@ -80,8 +81,8 @@ namespace Switcheroo
         private ObservableCollection<AppWindowViewModel> _listRight;
 
         // For navigation
-        private readonly List<System.Windows.Controls.ListBox> _listBoxes;
-        private List<System.Windows.Controls.ListBox> _visibleListBoxes;
+        private readonly List<PerformanceListBox> _listBoxes;
+        private List<PerformanceListBox> _visibleListBoxes;
         private int _activeColumnIndex = 0;
 
         public MainWindow()
@@ -94,8 +95,8 @@ namespace Switcheroo
             _listCenter = new ObservableCollection<AppWindowViewModel>();
             _listRight = new ObservableCollection<AppWindowViewModel>();
             
-            _listBoxes = new List<System.Windows.Controls.ListBox> { ListBoxLeft1, ListBoxLeft2, ListBoxLeft3, ListBoxCenter, ListBoxRight };
-            _visibleListBoxes = new List<System.Windows.Controls.ListBox>();
+            _listBoxes = new List<PerformanceListBox> { ListBoxLeft1, ListBoxLeft2, ListBoxLeft3, ListBoxCenter, ListBoxRight };
+            _visibleListBoxes = new List<PerformanceListBox>();
 
             ListBoxLeft1.ItemsSource = _listLeft1;
             ListBoxLeft2.ItemsSource = _listLeft2;
@@ -121,6 +122,13 @@ namespace Switcheroo
 
             // Preload data to eliminate lag on first toggle
             PreloadData();
+        }
+
+        // Prevent UI Automation apps from crawling this window.
+        // If many windows are open (and thus a lot ListBoxItems), we can't guarantee opening < 300ms otherwise.
+        protected override AutomationPeer OnCreateAutomationPeer()
+        {
+            return new SilentWindowAutomationPeer(this);
         }
 
         /// =================================
@@ -409,7 +417,7 @@ namespace Switcheroo
             }
 
             // Capture which ListBox instance was active
-            System.Windows.Controls.ListBox activeListBoxInstance = null;
+            PerformanceListBox activeListBoxInstance = null;
             if (_visibleListBoxes.Count > 0 && _activeColumnIndex >= 0 && _activeColumnIndex < _visibleListBoxes.Count)
             {
                 activeListBoxInstance = _visibleListBoxes[_activeColumnIndex];
@@ -554,6 +562,7 @@ namespace Switcheroo
             }
 
             // 3. Restore Selection for ALL columns
+            long tBeforeSelection = sw.ElapsedMilliseconds;
             for (int i = 0; i < _listBoxes.Count; i++)
             {
                 var lb = _listBoxes[i];
@@ -586,6 +595,7 @@ namespace Switcheroo
                     }
                 }
             }
+            long tAfterSelection = sw.ElapsedMilliseconds;
 
             // 4. Determine Active Column & Focus
             int newActiveIndex = -1;
@@ -622,9 +632,11 @@ namespace Switcheroo
                         : 0;
                 }
             }
+            long tBeforeSetActiveColumn = sw.ElapsedMilliseconds;
 
             // Activate the calculated column
             SetActiveColumn(newActiveIndex, focus, false);
+            long tAfterSetActiveColumn = sw.ElapsedMilliseconds;
 
             // Ensure the active item is visible
             var currentActive = _visibleListBoxes[_activeColumnIndex];
@@ -633,11 +645,22 @@ namespace Switcheroo
                 currentActive.ScrollIntoView(currentActive.SelectedItem);
             }
 
-            // Prevent recursive LoadData calls from TextChanged during Clear
-            // tb.TextChanged -= TextChanged;
-            // tb.Clear();
-            // tb.TextChanged += TextChanged;
-            // tb.Focus();
+#if DEBUG
+            long tScrollIntoView = sw.ElapsedMilliseconds;
+            if (tScrollIntoView > 150)
+            {
+                // [PROFILE] Output results
+                Console.WriteLine($"[PROFILE] LoadData timings (ms):" +
+                                $" FetchWindows={tGrouping}ms" +
+                                $" AppColumns={tAppColumns - tGrouping}ms" +
+                                $" WindowToColumn={tWindowToColumnAssignment - tAppColumns}ms" +
+                                $" WindowCloser={tWindowCloser - tWindowToColumnAssignment}ms" +
+                                $" SelectionRestore={tAfterSelection - tBeforeSelection}ms" +
+                                $" SetActiveColumn={tAfterSetActiveColumn - tBeforeSetActiveColumn}ms" +
+                                $" ScrollintoView={tScrollIntoView - tAfterSetActiveColumn}ms" +
+                                $" Total={tScrollIntoView}ms");
+            }
+#endif
         }
 
         private static System.Windows.Controls.ScrollViewer GetScrollViewer(System.Windows.DependencyObject o)
@@ -1097,7 +1120,7 @@ namespace Switcheroo
         // When a listbox gets focus, make it the active column
         private void ListBox_GotFocus(object sender, RoutedEventArgs e)
         {
-            var focusedListBox = sender as System.Windows.Controls.ListBox;
+            var focusedListBox = sender as PerformanceListBox;
             if (focusedListBox != null)
             {
                 int newIndex = _listBoxes.IndexOf(focusedListBox);
@@ -1475,7 +1498,7 @@ namespace Switcheroo
         {
             // This command only applies to the three leftmost "app" columns.
             var currentListBox = _visibleListBoxes[_activeColumnIndex];
-            var appListBoxes = new[] { ListBoxLeft1, ListBoxLeft2, ListBoxLeft3 };
+            var appListBoxes = new System.Windows.Controls.ListBox[] { ListBoxLeft1, ListBoxLeft2, ListBoxLeft3 };
             if (appListBoxes.Contains(currentListBox))
             {
                 if (currentListBox.Items.Count > 0)

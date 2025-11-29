@@ -51,6 +51,7 @@ Switcheroo displays windows in five columns:
 
 ## Todo List
 
+- [x] Performance improvements regarding UI Automation -> Disabled UIA access.
 - [ ] Support for Virtual Desktops
 - [ ] Assign shortcut - https://github.com/elig0n/Switcheroo/issues/30
 - [ ] Tagging windows - https://github.com/kvakulo/Switcheroo/issues/174
