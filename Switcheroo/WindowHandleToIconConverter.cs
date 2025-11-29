@@ -46,10 +46,11 @@ namespace Switcheroo
             var iconImage = MemoryCache.Default.Get(shortCacheKey) as BitmapImage;
             if (iconImage == null)
             {
+                // Console.WriteLine($"[DEBUG] Cache miss for window icon: {handle}");
                 var window = new AppWindow(handle);
                 var icon = ShouldUseSmallTaskbarIcons() ? window.SmallWindowIcon : window.LargeWindowIcon;
                 iconImage = _iconToBitmapConverter.Convert(icon) ?? new BitmapImage();
-                MemoryCache.Default.Set(shortCacheKey, iconImage, DateTimeOffset.Now.AddSeconds(5));
+                MemoryCache.Default.Set(shortCacheKey, iconImage, DateTimeOffset.Now.AddSeconds(60));
                 MemoryCache.Default.Set(longCacheKey, iconImage, DateTimeOffset.Now.AddMinutes(120));
             }
             return iconImage;
