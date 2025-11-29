@@ -55,7 +55,14 @@ namespace Switcheroo.Core
                     IntPtr response;
                     var outvalue = WinApi.SendMessageTimeout(window.HWnd, 0x007F, // WM_GETICON
                         size == WindowIconSize.Small ? new IntPtr(2) : new IntPtr(1), // 2=ICON_SMALL2, 1=ICON_BIG
-                        IntPtr.Zero, WinApi.SendMessageTimeoutFlags.SMTO_ABORTIFHUNG, 100, out response);
+                        IntPtr.Zero, WinApi.SendMessageTimeoutFlags.SMTO_ABORTIFHUNG, 20, out response);
+
+                    // if (outvalue == IntPtr.Zero)
+                    // {
+                    //      // If outvalue is 0, it means Timeout or Error
+                    //      // We can infer it's a timeout if GetLastError is 0, or just log it as a failure to respond.
+                    //      Console.WriteLine($"[WARNING] WM_GETICON timed out or failed for window '{window.Title}' (PID: {window.ProcessId}).");
+                    // }
 
                     if (outvalue == IntPtr.Zero || response == IntPtr.Zero)
                     {
