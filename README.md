@@ -67,6 +67,14 @@ Switcheroo displays windows in five columns:
 - [ ] Fix update checker
 - [ ] Proper logging/crash reporting
 
+## New features in Version 0.9.8
+
+- [x] Faster opening: rows are reused instead of rebuilt each time. Key press to first frame went from 80-330 ms to about 80 ms.
+- [x] Highlight windows by rule (process name, window title or regex) with a colour and an icon.
+- [x] UI Automation access disabled for speed.
+- [x] Icons load faster: shorter timeout per window and a longer cache.
+- [x] `--perflog` writes the time of each opening stage to `%TEMP%\switcheroo-perf.log`. `--bench <n>` opens the switcher n times and logs each run.
+
 ## New features in Version 0.9.7
 
 - [x] Alt+p to anonymize window titles for screenhots/demos/privacy
