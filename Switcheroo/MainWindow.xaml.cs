@@ -58,6 +58,7 @@ namespace Switcheroo
     {
         private WindowCloser _windowCloser;
         private List<AppWindowViewModel> _unfilteredWindowList;
+        private Dictionary<IntPtr, AppWindowViewModel> _viewModelsByHwnd = new Dictionary<IntPtr, AppWindowViewModel>();
         private NotifyIcon _notifyIcon;
         private HotKey _hotkey;
 
@@ -440,13 +441,23 @@ namespace Switcheroo
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
             // 2. Fetch Windows
+            // Reuse the view model of a window that was listed before. The list boxes then keep
+            // its row and only repaint what changed.
+            var viewModels = new Dictionary<IntPtr, AppWindowViewModel>();
             _unfilteredWindowList = new WindowFinder().GetWindows().Select(window =>
             {
-                var vm = new AppWindowViewModel(window);
+                AppWindowViewModel vm;
+                if (!_viewModelsByHwnd.TryGetValue(window.HWnd, out vm))
+                {
+                    vm = new AppWindowViewModel(window);
+                }
+                vm.IsBeingClosed = false;
                 var rule = _highlightService.FindMatch(vm.ProcessTitle, vm.WindowTitle, window.ClassName);
-                vm.ApplyHighlight(rule, false);
+                vm.ApplyHighlight(rule);
+                viewModels[window.HWnd] = vm;
                 return vm;
             }).ToList();
+            _viewModelsByHwnd = viewModels;
 
             long tFetch = sw.ElapsedMilliseconds;
 
@@ -539,21 +550,24 @@ namespace Switcheroo
 
             long tWindowCloser = sw.ElapsedMilliseconds;
 
-            // This was slightly faster than adding them individually and relying on ObservableCollection's notifications.
-            _listLeft1 = new ObservableCollection<AppWindowViewModel>(tmpLeft1);
-            ListBoxLeft1.ItemsSource = _listLeft1;
+            // A fresh open starts without selection and scrolled to the top, as a new list would.
+            if (!isReload)
+            {
+                foreach (var listBox in _listBoxes)
+                {
+                    listBox.UnselectAll();
+                    var scrollViewer = GetScrollViewer(listBox);
+                    if (scrollViewer != null && scrollViewer.VerticalOffset != 0) scrollViewer.ScrollToTop();
+                }
+            }
 
-            _listLeft2 = new ObservableCollection<AppWindowViewModel>(tmpLeft2);
-            ListBoxLeft2.ItemsSource = _listLeft2;
-
-            _listLeft3 = new ObservableCollection<AppWindowViewModel>(tmpLeft3);
-            ListBoxLeft3.ItemsSource = _listLeft3;
-
-            _listCenter = new ObservableCollection<AppWindowViewModel>(tmpCenter);
-            ListBoxCenter.ItemsSource = _listCenter;
-
-            _listRight = new ObservableCollection<AppWindowViewModel>(tmpRight);
-            ListBoxRight.ItemsSource = _listRight;
+            // Change the lists in place. Replacing them would rebuild every row, which is the
+            // most expensive part of opening the switcher.
+            SyncCollection(_listLeft1, tmpLeft1);
+            SyncCollection(_listLeft2, tmpLeft2);
+            SyncCollection(_listLeft3, tmpLeft3);
+            SyncCollection(_listCenter, tmpCenter);
+            SyncCollection(_listRight, tmpRight);
 
             long tBinding = sw.ElapsedMilliseconds;
 
@@ -692,6 +706,37 @@ namespace Switcheroo
                                 $" Total={tScrollIntoView}ms");
             }
 #endif
+        }
+
+        /// <summary>
+        /// Makes target equal to desired with as few remove, move and insert steps as possible.
+        /// </summary>
+        private static void SyncCollection(ObservableCollection<AppWindowViewModel> target, List<AppWindowViewModel> desired)
+        {
+            var wanted = new HashSet<AppWindowViewModel>(desired);
+            for (int i = target.Count - 1; i >= 0; i--)
+            {
+                if (!wanted.Contains(target[i])) target.RemoveAt(i);
+            }
+
+            for (int i = 0; i < desired.Count; i++)
+            {
+                var item = desired[i];
+                if (i < target.Count && ReferenceEquals(target[i], item)) continue;
+
+                int current = -1;
+                for (int k = i + 1; k < target.Count; k++)
+                {
+                    if (ReferenceEquals(target[k], item))
+                    {
+                        current = k;
+                        break;
+                    }
+                }
+
+                if (current >= 0) target.Move(current, i);
+                else target.Insert(i, item);
+            }
         }
 
         private static System.Windows.Controls.ScrollViewer GetScrollViewer(System.Windows.DependencyObject o)

@@ -48,6 +48,7 @@ namespace Switcheroo
             get { return _formattedTitle; }
             set
             {
+                if (_formattedTitle == value) return;
                 _formattedTitle = value;
                 NotifyOfPropertyChange(() => FormattedTitle);
             }
@@ -60,6 +61,7 @@ namespace Switcheroo
             get { return _formattedProcessTitle; }
             set
             {
+                if (_formattedProcessTitle == value) return;
                 _formattedProcessTitle = value;
                 NotifyOfPropertyChange(() => FormattedProcessTitle);
             }
@@ -72,6 +74,7 @@ namespace Switcheroo
             get { return _isBeingClosed; }
             set
             {
+                if (_isBeingClosed == value) return;
                 _isBeingClosed = value;
                 NotifyOfPropertyChange(() => IsBeingClosed);
             }
@@ -113,8 +116,17 @@ namespace Switcheroo
             set { _marker = value; NotifyOfPropertyChange(() => Marker); }
         }
 
+        // Colour and marker of the rule applied last, to skip the work when nothing changed.
+        private string _appliedHighlightKey;
+        private bool _highlightApplied;
+
         public void ApplyHighlight(HighlightRule rule, bool notify = true)
         {
+            var highlightKey = rule == null ? null : rule.ColorHex + "|" + rule.Marker;
+            if (_highlightApplied && highlightKey == _appliedHighlightKey) return;
+            _highlightApplied = true;
+            _appliedHighlightKey = highlightKey;
+
             // Default values
             Brush bg = Brushes.Transparent;
             Brush solid = Brushes.Transparent;
