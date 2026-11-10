@@ -19,6 +19,7 @@
  */
 
 using System;
+using System.Linq;
 using System.Configuration;
 using System.Diagnostics;
 using System.Reflection;
@@ -83,6 +84,9 @@ namespace Switcheroo
                 return false;
             }, true);
 #endif
+            var startArgs = Environment.GetCommandLineArgs();
+            PerfLog.Enabled = startArgs.Contains("--perflog") || startArgs.Contains("--bench");
+
             RunAsAdministratorIfConfigured();
 
             using (var mutex = new Mutex(false, mutex_id))
@@ -122,6 +126,20 @@ namespace Switcheroo
 #endif
 
                     Console.WriteLine("Switcheroo started...");
+                    PerfLog.Write("START version=" + Assembly.GetExecutingAssembly().GetName().Version
+                        + " admin=" + IsRunAsAdmin()
+                        + " renderTier=" + (System.Windows.Media.RenderCapability.Tier >> 16)
+                        + " settings=" + ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath);
+
+                    var cmdArgs = Environment.GetCommandLineArgs();
+                    var benchIndex = Array.IndexOf(cmdArgs, "--bench");
+                    if (benchIndex >= 0)
+                    {
+                        int benchCount;
+                        if (benchIndex + 1 >= cmdArgs.Length || !int.TryParse(cmdArgs[benchIndex + 1], out benchCount)) benchCount = 10;
+                        PerfLog.Write("BENCH " + string.Join(" ", cmdArgs.Skip(1)));
+                        mainWindow.Dispatcher.BeginInvoke(new Action(() => mainWindow.RunBench(benchCount)), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+                    }
 
                     // This starts the WPF message loop and blocks until the app exits
                     app.Run(mainWindow);
@@ -143,6 +161,7 @@ namespace Switcheroo
                     UseShellExecute = true,
                     WorkingDirectory = Environment.CurrentDirectory,
                     FileName = Assembly.GetEntryAssembly().CodeBase,
+                    Arguments = string.Join(" ", Environment.GetCommandLineArgs().Skip(1)),
                     Verb = "runas"
                 };
 

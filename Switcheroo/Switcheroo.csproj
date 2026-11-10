@@ -111,6 +111,7 @@
     </Compile>
     <Compile Include="Highlighting\HighlightService.cs" />
     <Compile Include="IconToBitmapConverter.cs" />
+    <Compile Include="PerfLog.cs" />
     <Compile Include="BoolToWhateverConverter.cs" />
     <Compile Include="Theme.cs" />
     <Compile Include="TitleFormatter.cs" />

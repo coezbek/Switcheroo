@@ -460,6 +460,7 @@ namespace Switcheroo
             _viewModelsByHwnd = viewModels;
 
             long tFetch = sw.ElapsedMilliseconds;
+            PerfLog.Mark("ld.fetch");
 
             // The foreground window stays at the top (Index 0)
             var firstWindow = _unfilteredWindowList.FirstOrDefault();
@@ -467,6 +468,7 @@ namespace Switcheroo
             TitleFormatter.FormatTitlesForDisplay(_unfilteredWindowList);
 
             long tFormat = sw.ElapsedMilliseconds;
+            PerfLog.Mark("ld.format");
 
             var tmpLeft1 = new List<AppWindowViewModel>();
             var tmpLeft2 = new List<AppWindowViewModel>();
@@ -506,6 +508,7 @@ namespace Switcheroo
                 .ToList();
 
             long tGrouping = sw.ElapsedMilliseconds;
+            PerfLog.Mark("ld.grouping");
 
             var appColumnTargetLists = new[] { tmpLeft1, tmpLeft2, tmpLeft3 };
             var min_number_of_windows_for_own_column = 0;
@@ -570,6 +573,7 @@ namespace Switcheroo
             SyncCollection(_listRight, tmpRight);
 
             long tBinding = sw.ElapsedMilliseconds;
+            PerfLog.Mark("ld.binding");
 
             if (monitor != null)
             {
@@ -577,6 +581,7 @@ namespace Switcheroo
             }
 
             long tLayout = sw.ElapsedMilliseconds;
+            PerfLog.Mark("ld.layout");
 
             // Restore searching state
             bool isSearching = isReload && !string.IsNullOrEmpty(tb.Text) && tb.IsEnabled;
@@ -638,6 +643,7 @@ namespace Switcheroo
                 }
             }
             long tAfterSelection = sw.ElapsedMilliseconds;
+            PerfLog.Mark("ld.selection");
 
             // 4. Determine Active Column & Focus
             int newActiveIndex = -1;
@@ -680,6 +686,7 @@ namespace Switcheroo
             SetActiveColumn(newActiveIndex, focus, false);
 
             long tAfterSetActiveColumn = sw.ElapsedMilliseconds;
+            PerfLog.Mark("ld.activeColumn");
 
             // Ensure the active item is visible
             var currentActive = _visibleListBoxes[_activeColumnIndex];
@@ -687,6 +694,7 @@ namespace Switcheroo
             {
                 currentActive.ScrollIntoView(currentActive.SelectedItem);
             }
+            PerfLog.Mark("ld.scroll");
 
 #if DEBUG
             long tScrollIntoView = sw.ElapsedMilliseconds;
@@ -1289,14 +1297,17 @@ namespace Switcheroo
             {
                 // [PROFILE] Start
                 var sw = System.Diagnostics.Stopwatch.StartNew();
+                PerfLog.Begin("AltTab", e.EventTime);
 
                 // 1. Measure Monitor Detection
                 var cursorMonitor = MonitorHelper.GetMonitorFromCursor();
                 long tMonitor = sw.ElapsedMilliseconds;
+                PerfLog.Mark("monitor");
 
                 // 2. Measure Data Loading (Logic & WinAPI calls)
                 LoadData(e.ShiftDown ? InitialFocus.PreviousItem : InitialFocus.NextItem, cursorMonitor);
                 long tLoad = sw.ElapsedMilliseconds;
+                PerfLog.Mark("loadData");
 
                 // 3. Measure UI Rendering & Activation
                 tb.IsEnabled = true;
@@ -1310,6 +1321,8 @@ namespace Switcheroo
                     tb.Text = "Press Alt + S to search";
                 }
                 Opacity = 1;
+                PerfLog.Mark("hookDone");
+                LogWhenOnScreen();
                 
                 sw.Stop();
 
@@ -1334,6 +1347,59 @@ namespace Switcheroo
             }
         }
 
+        /// <summary>
+        /// Finishes the PerfLog line for this opening. Records when WPF starts the first frame,
+        /// when that frame is done and when the UI thread is idle again.
+        /// </summary>
+        private void LogWhenOnScreen()
+        {
+            if (!PerfLog.Enabled) return;
+
+            EventHandler onRendering = null;
+            onRendering = (s, a) =>
+            {
+                CompositionTarget.Rendering -= onRendering;
+                PerfLog.Mark("renderStart");
+            };
+            CompositionTarget.Rendering += onRendering;
+
+            Dispatcher.BeginInvoke(new Action(() => PerfLog.Mark("renderDone")), DispatcherPriority.Loaded);
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                PerfLog.Mark("idle");
+                PerfLog.Note("windows=" + (_unfilteredWindowList == null ? 0 : _unfilteredWindowList.Count));
+                PerfLog.End();
+            }), DispatcherPriority.ContextIdle);
+        }
+
+        /// <summary>
+        /// Diagnostic mode: opens and hides the switcher n times without taking the focus,
+        /// logs each opening to PerfLog and then shuts the app down.
+        /// </summary>
+        public async void RunBench(int n)
+        {
+            await Task.Delay(2000);
+            ShowActivated = false;
+            for (int i = 0; i < n; i++)
+            {
+                if (_listCenter.Count > 3) _listCenter.Move(0, 3); // a real Alt+Tab changes the order
+                PerfLog.Begin("Bench", Environment.TickCount);
+                var monitor = MonitorHelper.GetMonitorFromCursor();
+                PerfLog.Mark("monitor");
+                LoadData(InitialFocus.NextItem, monitor);
+                PerfLog.Mark("loadData");
+                Show();
+                PerfLog.Mark("show");
+                Opacity = 1;
+                PerfLog.Mark("hookDone");
+                LogWhenOnScreen();
+                await Task.Delay(500);
+                HideWindow();
+                await Task.Delay(500);
+            }
+            Application.Current.Shutdown();
+        }
+
         private void ActivateAndFocusMainWindow()
         {
             // What happens below looks a bit weird, but for Switcheroo to get focus when using the Alt+Tab hook,
@@ -1355,9 +1421,13 @@ namespace Switcheroo
             }
 
             // Bring the Switcheroo window to the foreground
+            PerfLog.Mark("preShow");
             Show();
+            PerfLog.Mark("show");
             SystemWindow.ForegroundWindow = thisWindow;
+            PerfLog.Mark("setForeground");
             Activate();
+            PerfLog.Mark("activate");
 
             // Release the Alt key if it was pressed above
             if (altKeyPressed)

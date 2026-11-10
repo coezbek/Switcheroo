@@ -33,6 +33,7 @@ namespace Switcheroo
         public bool CtrlDown { get; set; }
         public bool ShiftDown { get; set; }
         public bool Handled { get; set; }
+        public int EventTime { get; set; }
     }
 
     public class AltTabHook : IDisposable
@@ -78,7 +79,7 @@ namespace Switcheroo
             var shiftKeyDown = IsKeyDown(_leftShiftKey) || IsKeyDown(_rightShiftKey);
             var ctrlKeyDown = IsKeyDown(_ctrlKey);
 
-            var eventArgs = OnPressed(shiftKeyDown, ctrlKeyDown);
+            var eventArgs = OnPressed(shiftKeyDown, ctrlKeyDown, keyboardMessage.Time);
 
             handled = eventArgs.Handled;
         }
@@ -94,9 +95,9 @@ namespace Switcheroo
                    (keyboardMessage.Message == WM_KEYDOWN || keyboardMessage.Message == WM_SYSKEYDOWN);
         }
 
-        private AltTabHookEventArgs OnPressed(bool shiftDown, bool ctrlDown)
+        private AltTabHookEventArgs OnPressed(bool shiftDown, bool ctrlDown, int eventTime)
         {
-            var altTabHookEventArgs = new AltTabHookEventArgs { ShiftDown = shiftDown, CtrlDown = ctrlDown };
+            var altTabHookEventArgs = new AltTabHookEventArgs { ShiftDown = shiftDown, CtrlDown = ctrlDown, EventTime = eventTime };
             var handler = Pressed;
             if (handler != null)
             {
